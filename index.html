@@ -237,52 +237,101 @@ function drawAnim(){
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#fafbfc'; ctx.fillRect(0,0,W,H);
 
+  const R=Math.min(16,W*0.05);
+  // Margen superior: pelota arriba visible + espacio para etiquetas de vectores
+  const topMargin = R + 60;
+  const botMargin = 28;
   const maxDrop=Math.max(yPos(MAX_T)*1.05,10);
-  const axX=W*0.45;
-  const toSY=y=>H*0.04+(H*0.90)*(y/maxDrop);
+  const axX=W*0.46;
+  // toSY mapea y=0 a topMargin y y=maxDrop al borde inferior
+  const toSY=y=>topMargin+(H-topMargin-botMargin)*(y/maxDrop);
 
+  // eje vertical
   ctx.strokeStyle='#ddd';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(axX,H*0.02);ctx.lineTo(axX,H*0.97);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(axX,topMargin-R-4);ctx.lineTo(axX,H-botMargin);ctx.stroke();
 
-  ctx.fillStyle='#bbb';ctx.font=`10px Arial`;ctx.textAlign='right';
+  // marcas y etiquetas eje
+  ctx.fillStyle='#bbb';ctx.font='10px Arial';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
     const yv=(maxDrop/4)*i;
     const sy=toSY(yv);
     ctx.fillText(yv.toFixed(0)+'m',axX-5,sy+4);
-    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.strokeStyle='#ddd';ctx.stroke();
   }
 
+  // pelota — siempre dentro del canvas
   const py=yPos(tSim);
   const cy=toSY(py);
-  const R=Math.min(16,W*0.06);
 
   ctx.beginPath();ctx.arc(axX,cy,R,0,2*Math.PI);
   ctx.fillStyle='#1a6fc4';ctx.fill();
   ctx.strokeStyle='#0d4a9e';ctx.lineWidth=1.5;ctx.stroke();
 
   const vNow=vAnal(tSim);
-  const sc=H*0.012;
-  const Fg=m*G*sc, Fr=k*vNow*sc, Fn=(m*G-k*vNow)*sc;
+  // escala de vectores: proporcional a la altura disponible
+  const sc=Math.min((H-topMargin-botMargin)*0.013, 4.5);
+  const Fg_len = m*G*sc;
+  const Fr_len = k*vNow*sc;
+  const Fn_len = Math.abs(m*G - k*vNow)*sc;
+  const Fn_dir = (m*G - k*vNow) >= 0 ? 1 : -1; // 1=abajo, -1=arriba
 
-  function vec(x,y,dy,color,lbl){
-    if(Math.abs(dy)<2)return;
-    const dir=dy>0?1:-1;
-    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();
+  // Función para dibujar vector con etiqueta completa en dos líneas
+  function vec(x, y, dyLen, dir, color, lbl1, lbl2){
+    const dy = dyLen * dir;
+    const minLen = 4; // dibuja siempre si tiene algo de longitud
+    const drawLen = Math.max(dyLen, minLen);
+    const actualDy = drawLen * dir;
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x, y+actualDy); ctx.stroke();
+    // punta de flecha
     ctx.beginPath();
-    ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-dir*9);ctx.lineTo(x+5,y+dy-dir*9);
-    ctx.closePath();ctx.fill();
-    ctx.font='bold 10px Arial';
-    ctx.textAlign=x>axX?'left':'right';
-    ctx.fillText(lbl,x>axX?x+7:x-7,y+dy*0.5+4);
+    ctx.moveTo(x, y+actualDy);
+    ctx.lineTo(x-5, y+actualDy - dir*9);
+    ctx.lineTo(x+5, y+actualDy - dir*9);
+    ctx.closePath(); ctx.fill();
+    // etiqueta: dos líneas — símbolo y descripción
+    const lx = x > axX ? x+8 : x-8;
+    const anchor = x > axX ? 'left' : 'right';
+    ctx.textAlign = anchor;
+    ctx.font = 'bold 11px Arial';
+    ctx.fillText(lbl1, lx, y + actualDy*0.4);
+    ctx.font = '9px Arial';
+    ctx.fillStyle = color;
+    ctx.fillText(lbl2, lx, y + actualDy*0.4 + 13);
   }
 
-  vec(axX-R-10,cy, Fg, '#cc2200','Fg');
-  vec(axX+R+10,cy,-Fr,'#1D9E75','Fr');
-  vec(axX,cy+R+4, Fn, '#e07000','Fn');
+  // Fg: peso — hacia abajo — izquierda de la pelota
+  vec(axX - R - 14, cy, Fg_len, 1, '#cc2200', 'Fg', 'Peso');
 
+  // Fr: resistencia del aire — hacia arriba — derecha de la pelota
+  // siempre visible: mínimo 4px aunque v=0
+  vec(axX + R + 14, cy, Math.max(Fr_len, 4), -1, '#1D9E75', 'Fr', 'Resist. aire');
+
+  // Fn: fuerza neta — columna central desplazada
+  if(Fn_len > 1){
+    vec(axX, cy + R + 6, Fn_len, Fn_dir, '#e07000', 'Fn', 'F. neta');
+  } else {
+    // equilibrio — mostrar punto y texto "Fn = 0"
+    ctx.beginPath(); ctx.arc(axX, cy+R+6, 4, 0, 2*Math.PI);
+    ctx.fillStyle='#e07000'; ctx.fill();
+    ctx.font='9px Arial'; ctx.textAlign='center'; ctx.fillStyle='#e07000';
+    ctx.fillText('Fn = 0 (v = v∞)', axX, cy+R+22);
+  }
+
+  // leyenda de colores en esquina
+  const lx0 = W - 10;
+  const ly0 = 12;
+  ctx.font = '9px Arial'; ctx.textAlign = 'right';
+  [['#cc2200','Fg: peso (mg)'],['#1D9E75','Fr: resist. aire (kv)'],['#e07000','Fn: fuerza neta']].forEach((item,i)=>{
+    ctx.fillStyle=item[0];
+    ctx.fillRect(lx0-70, ly0+i*14-8, 10, 8);
+    ctx.fillStyle='#555';
+    ctx.fillText(item[1], lx0, ly0+i*14);
+  });
+
+  // tiempo
   ctx.fillStyle='#aaa';ctx.font='10px Arial';ctx.textAlign='center';
-  ctx.fillText('t = '+tSim.toFixed(1)+' s',axX,H*0.98);
+  ctx.fillText('t = '+tSim.toFixed(1)+' s', axX, H-8);
 }
 
 /* ── GRÁFICA v(t) ── */
