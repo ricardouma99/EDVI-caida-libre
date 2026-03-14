@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EDVI-1 — Exploración del fenómeno físico</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overscroll-behavior:none}
+.container{display:flex;height:100vh;min-height:500px}
+.sidebar{width:260px;min-width:210px;background:#fff;border-right:1px solid #e0e0e0;padding:14px 12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.canvases{flex:1;display:grid;grid-template-rows:1fr 1fr;min-height:0}
+.canvas-wrap{position:relative;min-height:0;overflow:hidden;background:#fff;border-bottom:1px solid #e8e8e8}
+.canvas-wrap canvas{display:block;width:100%;height:100%}
+@media(max-width:699px){
+  .container{flex-direction:column;height:auto;min-height:100vh}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid #e0e0e0;padding:12px;gap:8px}
+  .canvases{display:flex;flex-direction:column}
+  .canvas-wrap{height:260px;flex-shrink:0}
+}
+.sidebar h2{font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.4}
+.badge{display:inline-block;background:#eef4fc;color:#0d4a9e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:4px}
+.ctrl-group{display:flex;flex-direction:column;gap:3px}
+.ctrl-group label{font-size:11px;color:#666}
+.ctrl-row{display:flex;align-items:center;gap:8px}
+.ctrl-row input[type=range]{flex:1;height:4px;accent-color:#1a6fc4;cursor:pointer}
+.ctrl-row span{font-size:12px;font-weight:700;min-width:56px;text-align:right;color:#222}
+.ctrls-grid{display:flex;flex-direction:column;gap:8px}
+.btn-row{display:flex;gap:8px}
+.btn{flex:1;padding:9px 6px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#333;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{background:#e8e8e8}
+.btn.active{background:#1D9E75;color:#fff;border-color:#0F6E56}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.08em;color:#999;text-transform:uppercase;margin-top:2px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat{background:#f7f8fa;border-radius:8px;padding:7px 10px;border:1px solid #ebebeb}
+.stat-label{font-size:10px;color:#888;margin-bottom:1px}
+.stat-val{font-size:15px;font-weight:700;color:#1a1a1a}
+.eq-box{background:#eef4fc;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;color:#0d4a9e;text-align:center}
+.eq-box+.eq-box{margin-top:4px}
+.task-box{background:#fffbea;border:1px solid #f0d060;border-radius:8px;padding:8px 10px;font-size:11px;color:#665500;line-height:1.5}
+.task-box strong{display:block;font-size:11px;font-weight:700;color:#443300;margin-bottom:4px}
+.legend{display:flex;flex-direction:column;gap:4px}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}
+.leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
+.leg-line.dashed{background:none;border-top:2.5px dashed}
+.canvas-label{position:absolute;top:7px;left:10px;font-size:10px;font-weight:700;color:#aaa;letter-spacing:.05em;text-transform:uppercase;pointer-events:none;z-index:1}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <span class="badge">AD1 · EDVI-1</span>
+    <h2>Exploración del fenómeno físico</h2>
+
+    <div class="task-box">
+      <strong>Actividad 3 — Preguntas guía</strong>
+      1. Observa el movimiento del cuerpo. ¿Qué le ocurre a su velocidad con el tiempo?<br>
+      2. ¿Qué representan las flechas que ves sobre el cuerpo?<br>
+      3. Mueve el deslizador de masa m. ¿Qué cambia en el movimiento?<br>
+      4. ¿La velocidad crece indefinidamente? ¿Por qué crees que ocurre eso?
+    </div>
+
+    <div class="ctrls-grid">
+      <div class="ctrl-group">
+        <label>masa m (kg)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_m" min="1" max="20" step="0.5" value="5">
+          <span id="lbl_m">5.0 kg</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <label>coef. resistencia k (kg/s)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_k" min="0.1" max="5" step="0.1" value="1">
+          <span id="lbl_k">1.0 kg/s</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <label>velocidad inicial v₀ (m/s)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_v0" min="0" max="30" step="1" value="0">
+          <span id="lbl_v0">0 m/s</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="btn_play">▶ Iniciar</button>
+      <button class="btn" id="btn_reset">↺ Reiniciar</button>
+    </div>
+
+    <div class="section-label">Lectura en tiempo real</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">v(t) analítica</div><div class="stat-val" id="sv_vt">0.00 m/s</div></div>
+      <div class="stat"><div class="stat-label">posición y(t)</div><div class="stat-val" id="sv_vinf">0.00 m</div></div>
+      <div class="stat"><div class="stat-label">dv/dt</div><div class="stat-val" id="sv_dvdt">9.80 m/s²</div></div>
+      <div class="stat"><div class="stat-label">t (s)</div><div class="stat-val" id="sv_t">0.00 s</div></div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4px">Leyenda</div>
+    <div class="legend">
+      <div class="leg-item"><span class="leg-line" style="background:#cc2200"></span>Fg: peso (mg)</div>
+      <div class="leg-item"><span class="leg-line" style="background:#1D9E75"></span>Fr: resistencia del aire (kv)</div>
+      <div class="leg-item"><span class="leg-line" style="background:#e07000"></span>Fn: fuerza neta</div>
+      <div class="leg-item"><span class="leg-line" style="background:#1a6fc4"></span>Curva de v(t) observada</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="canvases">
+      <div class="canvas-wrap">
+        <span class="canvas-label">Animación física — vectores de fuerza</span>
+        <canvas id="cv_anim"></canvas>
+      </div>
+      <div class="canvas-wrap">
+        <span class="canvas-label">Comportamiento de v(t) — observa la tendencia</span>
+        <canvas id="cv_graf"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const G=9.8,MAX_T=30,DT=0.05;
+let m=5,k=1,v0=0,tSim=0,playing=false,lastTs=null;
+let trailNum=[],trailAnal=[];
+
+const vinf=()=>m*G/k;
+const vAnal=t=>{const vi=vinf();return vi-(vi-v0)*Math.exp(-(k/m)*t)};
+const dvdt=t=>G-(k/m)*vAnal(t);
+const yPos=t=>{const vi=vinf();return vi*t+(vi-v0)*(m/k)*(Math.exp(-(k/m)*t)-1)};
+function rk4(v,dt){const f=v=>G-(k/m)*v;const k1=f(v),k2=f(v+dt/2*k1),k3=f(v+dt/2*k2),k4=f(v+dt*k3);return v+dt/6*(k1+2*k2+2*k3+k4);}
+
+function buildTrails(){
+  trailNum=[];trailAnal=[];let vn=v0;
+  for(let t=0;t<=MAX_T+DT;t+=DT){trailNum.push({t,v:vn});trailAnal.push({t,v:vAnal(t)});vn=rk4(vn,DT);}
+}
+
+function updateStats(){
+  const vt=vAnal(tSim),vi=vinf();
+  document.getElementById('sv_vt').textContent=vt.toFixed(2)+' m/s';
+  document.getElementById('sv_vinf').textContent=yPos(tSim).toFixed(1)+' m';
+  document.getElementById('sv_dvdt').textContent=dvdt(tSim).toFixed(2)+' m/s²';
+  document.getElementById('sv_t').textContent=tSim.toFixed(2)+' s';
+
+}
+
+function drawAnim(){
+  const cv=document.getElementById('cv_anim');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth,H=cv.offsetHeight;
+  cv.width=W*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fafbfc';ctx.fillRect(0,0,W,H);
+
+  const R=Math.min(16,W*0.05);
+  const topM=R+60,botM=28;
+  const maxDrop=Math.max(yPos(MAX_T)*1.05,10);
+  const axX=W*0.46;
+  const toSY=y=>topM+(H-topM-botM)*(y/maxDrop);
+
+  ctx.strokeStyle='#ddd';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(axX,topM-R-4);ctx.lineTo(axX,H-botM);ctx.stroke();
+  ctx.fillStyle='#bbb';ctx.font='10px Arial';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const yv=(maxDrop/4)*i,sy=toSY(yv);
+    ctx.fillText(yv.toFixed(0)+'m',axX-5,sy+4);
+    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.strokeStyle='#ddd';ctx.stroke();
+  }
+
+  const cy=toSY(yPos(tSim));
+  ctx.beginPath();ctx.arc(axX,cy,R,0,2*Math.PI);
+  ctx.fillStyle='#1a6fc4';ctx.fill();ctx.strokeStyle='#0d4a9e';ctx.lineWidth=1.5;ctx.stroke();
+
+  const vNow=vAnal(tSim);
+  const sc=Math.min((H-topM-botM)*0.013,4.5);
+  const Fg_len=m*G*sc,Fr_len=k*vNow*sc,Fn_len=Math.abs(m*G-k*vNow)*sc;
+  const Fn_dir=(m*G-k*vNow)>=0?1:-1;
+
+  function vec(x,y,len,dir,color,lbl1,lbl2){
+    const drawLen=Math.max(len,4),dy=drawLen*dir;
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-dir*9);ctx.lineTo(x+5,y+dy-dir*9);ctx.closePath();ctx.fill();
+    const lx=x>axX?x+8:x-8;
+    ctx.textAlign=x>axX?'left':'right';
+    ctx.font='bold 11px Arial';ctx.fillText(lbl1,lx,y+dy*0.4);
+    ctx.font='9px Arial';ctx.fillText(lbl2,lx,y+dy*0.4+13);
+  }
+
+  vec(axX-R-14,cy,Fg_len,1,'#cc2200','Fg','Peso');
+  vec(axX+R+14,cy,Math.max(Fr_len,4),-1,'#1D9E75','Fr','Resist. aire');
+  if(Fn_len>1) vec(axX,cy+R+6,Fn_len,Fn_dir,'#e07000','Fn','F. neta');
+  else{ctx.beginPath();ctx.arc(axX,cy+R+6,4,0,2*Math.PI);ctx.fillStyle='#e07000';ctx.fill();ctx.font='9px Arial';ctx.textAlign='center';ctx.fillStyle='#e07000';ctx.fillText('Fn=0: v=v∞',axX,cy+R+20);}
+
+  ctx.fillStyle='#aaa';ctx.font='10px Arial';ctx.textAlign='center';
+  ctx.fillText('t = '+tSim.toFixed(1)+' s',axX,H-8);
+}
+
+function drawGraf(){
+  const cv=document.getElementById('cv_graf');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth,H=cv.offsetHeight;
+  cv.width=W*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  const pad={l:46,r:44,t:18,b:36};
+  const gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  const vi=vinf();
+  const maxV=Math.max(vi*1.18,v0*1.18,10);
+  const tx=t=>pad.l+t/MAX_T*gW;
+  const ty=v=>pad.t+gH*(1-v/maxV);
+
+  ctx.strokeStyle='#f0f0f0';ctx.lineWidth=1;
+  for(let v=0;v<=maxV;v+=maxV/5){ctx.beginPath();ctx.moveTo(pad.l,ty(v));ctx.lineTo(pad.l+gW,ty(v));ctx.stroke();}
+  for(let t=0;t<=MAX_T;t+=5){ctx.beginPath();ctx.moveTo(tx(t),pad.t);ctx.lineTo(tx(t),pad.t+gH);ctx.stroke();}
+
+  ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
+
+  ctx.fillStyle='#999';ctx.font='10px Arial';ctx.textAlign='right';
+  for(let v=0;v<=maxV;v+=maxV/5)ctx.fillText(v.toFixed(0),pad.l-5,ty(v)+4);
+  ctx.textAlign='center';
+  for(let t=0;t<=MAX_T;t+=5)ctx.fillText(t,tx(t),pad.t+gH+14);
+  ctx.fillText('t (s)',pad.l+gW/2,H-3);
+  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('v (m/s)',0,0);ctx.restore();
+
+  // curva de comportamiento observado (sin modelo explícito)
+  ctx.strokeStyle='#1a6fc4';ctx.lineWidth=3;
+  ctx.beginPath();let first=true;
+  for(const p of trailAnal){if(p.t>tSim+DT)break;if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}else ctx.lineTo(tx(p.t),ty(p.v));}
+  ctx.stroke();
+
+  const vNow=vAnal(tSim);
+  ctx.beginPath();ctx.arc(tx(tSim),ty(vNow),5,0,2*Math.PI);ctx.fillStyle='#111';ctx.fill();
+  ctx.fillStyle='#333';ctx.font='bold 10px Arial';ctx.textAlign='left';
+  ctx.fillText('v='+vNow.toFixed(2)+' m/s',tx(tSim)+7,ty(vNow)-6);
+}
+
+function render(){updateStats();drawAnim();drawGraf();}
+function reset(){
+  tSim=0;playing=false;lastTs=null;
+  document.getElementById('btn_play').textContent='▶ Iniciar';
+  document.getElementById('btn_play').classList.remove('active');
+  buildTrails();render();
+}
+function loop(ts){
+  if(!playing){lastTs=null;return;}
+  if(lastTs===null)lastTs=ts;
+  tSim=Math.min(tSim+Math.min((ts-lastTs)/1000,0.1),MAX_T);
+  lastTs=ts;render();
+  if(tSim>=MAX_T){playing=false;document.getElementById('btn_play').textContent='▶ Iniciar';document.getElementById('btn_play').classList.remove('active');return;}
+  requestAnimationFrame(loop);
+}
+document.getElementById('btn_play').addEventListener('click',()=>{
+  if(tSim>=MAX_T)tSim=0;playing=!playing;
+  const btn=document.getElementById('btn_play');
+  if(playing){btn.textContent='⏸ Pausar';btn.classList.add('active');requestAnimationFrame(loop);}
+  else{btn.textContent='▶ Iniciar';btn.classList.remove('active');}
+});
+document.getElementById('btn_reset').addEventListener('click',reset);
+function bindSlider(id,lblId,unit,dec,setter){
+  const sl=document.getElementById(id),lb=document.getElementById(lblId);
+  sl.addEventListener('input',()=>{setter(parseFloat(sl.value));lb.textContent=parseFloat(sl.value).toFixed(dec)+' '+unit;reset();});
+}
+bindSlider('sl_m','lbl_m','kg',1,v=>{m=v;});
+bindSlider('sl_k','lbl_k','kg/s',1,v=>{k=v;});
+bindSlider('sl_v0','lbl_v0','m/s',0,v=>{v0=v;});
+window.addEventListener('resize',render);
+reset();
+</script>
+</body>
+</html>
