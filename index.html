@@ -2,471 +2,157 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EDVI — Caída libre con resistencia del aire</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overscroll-behavior:none}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 16px}
 
-/* ── LAYOUT DESKTOP (≥700px) ── */
-.container{display:flex;height:100vh;min-height:500px}
-.sidebar{
-  width:250px;min-width:200px;background:#fff;
-  border-right:1px solid #e0e0e0;
-  padding:14px 12px;display:flex;flex-direction:column;gap:10px;
-  overflow-y:auto;flex-shrink:0
-}
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
-.canvases{flex:1;display:grid;grid-template-rows:1fr 1fr;min-height:0}
-.canvas-wrap{
-  position:relative;min-height:0;overflow:hidden;
-  background:#fff;border-bottom:1px solid #e8e8e8
-}
-.canvas-wrap canvas{display:block;width:100%;height:100%}
+.header{text-align:center;margin-bottom:32px;max-width:600px}
+.header h1{font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.4;margin-bottom:8px}
+.header p{font-size:13px;color:#666;line-height:1.6}
+.header .inst{font-size:11px;color:#999;margin-top:6px;font-style:italic}
 
-/* ── LAYOUT MÓVIL (<700px) ── */
-@media(max-width:699px){
-  .container{flex-direction:column;height:auto;min-height:100vh}
-  .sidebar{
-    width:100%;border-right:none;border-bottom:1px solid #e0e0e0;
-    padding:12px;gap:8px
-  }
-  .main{flex:1}
-  .canvases{display:flex;flex-direction:column}
-  .canvas-wrap{height:280px;flex-shrink:0}
-  .canvas-wrap:last-child{border-bottom:none}
-}
+.cards{display:flex;flex-direction:column;gap:16px;width:100%;max-width:540px}
 
-/* ── COMPONENTES ── */
-.sidebar h2{font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.4}
+.card{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:20px 20px 16px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s;cursor:pointer;text-decoration:none;color:inherit}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.10);transform:translateY(-2px)}
+.card:active{transform:translateY(0)}
 
-.ctrl-group{display:flex;flex-direction:column;gap:3px}
-.ctrl-group label{font-size:11px;color:#666}
-.ctrl-row{display:flex;align-items:center;gap:8px}
-.ctrl-row input[type=range]{flex:1;height:4px;accent-color:#1a6fc4;cursor:pointer}
-.ctrl-row span{font-size:12px;font-weight:700;min-width:56px;text-align:right;color:#222}
+.card-header{display:flex;align-items:center;gap:12px}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;font-size:16px;font-weight:700;flex-shrink:0}
+.badge-1{background:#eef4fc;color:#0d4a9e}
+.badge-2{background:#e8f5e9;color:#1B5E20}
+.badge-3{background:#fce4ec;color:#880E4F}
 
-/* En móvil los controles van en fila de 3 */
-@media(max-width:699px){
-  .ctrls-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  .ctrl-group label{font-size:10px}
-  .ctrl-row span{font-size:11px;min-width:44px}
-}
+.card-title{font-size:15px;font-weight:700;color:#1a1a1a;line-height:1.3}
+.card-sub{font-size:12px;color:#888;margin-top:1px}
 
-.btn-row{display:flex;gap:8px}
-.btn{
-  flex:1;padding:9px 6px;border-radius:8px;border:1px solid #ddd;
-  background:#fff;cursor:pointer;font-size:12px;font-weight:600;
-  color:#333;transition:background .15s;
-  display:flex;align-items:center;justify-content:center;gap:4px;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation
-}
-.btn:active{background:#e8e8e8}
-.btn.active{background:#1D9E75;color:#fff;border-color:#0F6E56}
+.card-desc{font-size:12px;color:#555;line-height:1.6;padding-left:52px}
 
-.section-label{
-  font-size:10px;font-weight:700;letter-spacing:.08em;
-  color:#999;text-transform:uppercase;margin-top:2px
-}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-left:52px;margin-top:2px}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;letter-spacing:.02em}
+.tag-blue{background:#eef4fc;color:#185FA5}
+.tag-green{background:#e8f5e9;color:#1B5E20}
+.tag-orange{background:#fff3e0;color:#e65100}
+.tag-purple{background:#f3e5f5;color:#6a1b9a}
+.tag-red{background:#fce4ec;color:#880E4F}
 
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.stat{background:#f7f8fa;border-radius:8px;padding:7px 10px;border:1px solid #ebebeb}
-.stat-label{font-size:10px;color:#888;margin-bottom:1px}
-.stat-val{font-size:15px;font-weight:700;color:#1a1a1a}
+.card-arrow{font-size:18px;color:#ccc;flex-shrink:0}
+.card:hover .card-arrow{color:#1a6fc4}
 
-.eq-box{
-  background:#eef4fc;border-radius:8px;padding:7px 10px;
-  font-size:12px;font-weight:600;color:#0d4a9e;text-align:center
-}
-.eq-box+.eq-box{margin-top:4px}
+.divider{width:100%;max-width:540px;text-align:center;font-size:11px;color:#bbb;margin:8px 0;position:relative}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:#e8e8e8}
+.divider::before{left:0}.divider::after{right:0}
 
-.legend{display:flex;flex-direction:column;gap:4px}
-.leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}
-.leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
-.leg-line.dashed{background:none;border-top:2.5px dashed}
+.footer{margin-top:32px;text-align:center;font-size:11px;color:#bbb;max-width:540px;line-height:1.6}
+.footer a{color:#bbb;text-decoration:none}
+.footer a:hover{color:#888}
 
-/* En móvil ocultar leyenda y ecuaciones para ahorrar espacio */
-@media(max-width:699px){
-  .hide-mobile{display:none}
-  .stats{grid-template-columns:repeat(4,1fr)}
-  .stat-val{font-size:13px}
-}
-
-.canvas-label{
-  position:absolute;top:7px;left:10px;
-  font-size:10px;font-weight:700;color:#aaa;letter-spacing:.05em;
-  text-transform:uppercase;pointer-events:none;z-index:1
+@media(max-width:500px){
+  body{padding:20px 12px}
+  .header h1{font-size:17px}
+  .card{padding:16px 14px 12px}
+  .card-desc{padding-left:0;margin-top:4px}
+  .card-footer{padding-left:0}
 }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <h2>Caída libre con resistencia del aire</h2>
+<div class="header">
+  <h1>Caída libre con resistencia del aire</h1>
+  <p>Escenario Didáctico Virtual Interactivo (EDVI)<br>
+  Secuencia de actividades de modelización matemática</p>
+  <p class="inst">CINVESTAV · Departamento de Matemática Educativa · 2026</p>
+</div>
 
-    <div class="ctrls-grid">
-      <div class="ctrl-group">
-        <label>masa m (kg)</label>
-        <div class="ctrl-row">
-          <input type="range" id="sl_m" min="1" max="20" step="0.5" value="5">
-          <span id="lbl_m">5.0 kg</span>
-        </div>
-      </div>
-      <div class="ctrl-group">
-        <label>coef. resist. k (kg/s)</label>
-        <div class="ctrl-row">
-          <input type="range" id="sl_k" min="0.1" max="5" step="0.1" value="1">
-          <span id="lbl_k">1.0 kg/s</span>
-        </div>
-      </div>
-      <div class="ctrl-group">
-        <label>vel. inicial v₀ (m/s)</label>
-        <div class="ctrl-row">
-          <input type="range" id="sl_v0" min="0" max="30" step="1" value="0">
-          <span id="lbl_v0">0 m/s</span>
-        </div>
+<div class="cards">
+
+  <!-- EDVI-1 -->
+  <a class="card" href="EDVI1_AD1_exploracion.html">
+    <div class="card-header">
+      <div class="badge badge-1">1</div>
+      <div>
+        <div class="card-title">Actividad 1 — Exploración del fenómeno</div>
+        <div class="card-sub">EDVI-1 · Punto de partida</div>
       </div>
     </div>
-
-    <div class="btn-row">
-      <button class="btn" id="btn_play">▶ Iniciar</button>
-      <button class="btn" id="btn_reset">↺ Reiniciar</button>
+    <div class="card-desc">
+      Observa el movimiento del cuerpo en caída libre y los vectores de fuerza.
+      Explora cómo cambia la velocidad al modificar la masa y el coeficiente
+      de resistencia del aire.
     </div>
-
-    <div class="section-label">Lectura en tiempo real</div>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-label">v(t)</div>
-        <div class="stat-val" id="sv_vt">0.00 m/s</div>
+    <div class="card-footer">
+      <div class="card-tags">
+        <span class="tag tag-blue">Animación física</span>
+        <span class="tag tag-blue">Vectores Fg · Fr · Fn</span>
+        <span class="tag tag-blue">Curva v(t)</span>
       </div>
-      <div class="stat">
-        <div class="stat-label">v∞ = mg/k</div>
-        <div class="stat-val" id="sv_vinf">49.00 m/s</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">dv/dt</div>
-        <div class="stat-val" id="sv_dvdt">9.80 m/s²</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">t (s)</div>
-        <div class="stat-val" id="sv_t">0.00 s</div>
-      </div>
+      <span class="card-arrow">›</span>
     </div>
+  </a>
 
-    <div class="hide-mobile">
-      <div class="section-label" style="margin-bottom:6px">Modelo matemático</div>
-      <div class="eq-box">m · dv/dt = mg − kv</div>
-      <div class="eq-box">v(t) = v∞(1 − e<sup>−kt/m</sup>)</div>
-    </div>
+  <div class="divider">completar AD1 antes de continuar</div>
 
-    <div class="hide-mobile">
-      <div class="section-label" style="margin-bottom:6px">Leyenda</div>
-      <div class="legend">
-        <div class="leg-item">
-          <span class="leg-line" style="background:#1a6fc4"></span>Solución analítica
-        </div>
-        <div class="leg-item">
-          <span class="leg-line dashed" style="border-color:#1D9E75"></span>Solución numérica (RK4)
-        </div>
-        <div class="leg-item">
-          <span class="leg-line dashed" style="border-color:#cc2200"></span>Velocidad límite v∞
-        </div>
+  <!-- EDVI-2 -->
+  <a class="card" href="EDVI2_AD2_construccion.html">
+    <div class="card-header">
+      <div class="badge badge-2">2</div>
+      <div>
+        <div class="card-title">Actividad 2 — Construcción del modelo</div>
+        <div class="card-sub">EDVI-2 · Modelización</div>
       </div>
     </div>
-  </div>
-
-  <!-- GRÁFICAS -->
-  <div class="main">
-    <div class="canvases">
-      <div class="canvas-wrap">
-        <span class="canvas-label">Animación física</span>
-        <canvas id="cv_anim"></canvas>
+    <div class="card-desc">
+      Analiza las fuerzas del sistema y construye la ecuación diferencial
+      que describe el movimiento. Observa cómo evoluciona la fuerza neta
+      y la velocidad con el tiempo.
+    </div>
+    <div class="card-footer">
+      <div class="card-tags">
+        <span class="tag tag-green">Vectores con magnitud</span>
+        <span class="tag tag-green">Gráfica v(t)</span>
+        <span class="tag tag-green">Gráfica Fn(t)</span>
       </div>
-      <div class="canvas-wrap">
-        <span class="canvas-label">Gráfica v(t)</span>
-        <canvas id="cv_graf"></canvas>
+      <span class="card-arrow">›</span>
+    </div>
+  </a>
+
+  <div class="divider">completar AD2 antes de continuar</div>
+
+  <!-- EDVI-3 -->
+  <a class="card" href="EDVI3_AD3_validacion.html">
+    <div class="card-header">
+      <div class="badge badge-3">3</div>
+      <div>
+        <div class="card-title">Actividad 3 — Validación y predicción</div>
+        <div class="card-sub">EDVI-3 · Cierre del ciclo</div>
       </div>
     </div>
-  </div>
+    <div class="card-desc">
+      Valida tu modelo matemático comparando la solución analítica con la
+      simulación. Interpreta las gráficas de posición, velocidad y aceleración,
+      y predice el comportamiento bajo nuevas condiciones.
+    </div>
+    <div class="card-footer">
+      <div class="card-tags">
+        <span class="tag tag-red">y(t) · v(t) · a(t)</span>
+        <span class="tag tag-orange">Botón de revelación</span>
+        <span class="tag tag-purple">Solución analítica vs. numérica</span>
+      </div>
+      <span class="card-arrow">›</span>
+    </div>
+  </a>
 
 </div>
 
-<script>
-const G=9.8,MAX_T=30,DT=0.05;
-let m=5,k=1,v0=0,tSim=0,playing=false,lastTs=null;
-let trailNum=[],trailAnal=[];
+<div class="footer">
+  Hernández Méndez, R. (2026). <em>EDVI: Escenario Didáctico Virtual Interactivo
+  para la modelización de la caída libre con resistencia del aire.</em><br>
+  CINVESTAV, Departamento de Matemática Educativa.
+</div>
 
-const vinf=()=>m*G/k;
-const vAnal=t=>{const vi=vinf();return vi-(vi-v0)*Math.exp(-(k/m)*t)};
-const dvdt=t=>G-(k/m)*vAnal(t);
-const yPos=t=>{const vi=vinf();return vi*t+(vi-v0)*(m/k)*(Math.exp(-(k/m)*t)-1)};
-
-function rk4(v,dt){
-  const f=v=>G-(k/m)*v;
-  const k1=f(v),k2=f(v+dt/2*k1),k3=f(v+dt/2*k2),k4=f(v+dt*k3);
-  return v+dt/6*(k1+2*k2+2*k3+k4);
-}
-
-function buildTrails(){
-  trailNum=[];trailAnal=[];
-  let vn=v0;
-  for(let t=0;t<=MAX_T+DT;t+=DT){
-    trailNum.push({t,v:vn});
-    trailAnal.push({t,v:vAnal(t)});
-    vn=rk4(vn,DT);
-  }
-}
-
-function updateStats(){
-  document.getElementById('sv_vt').textContent   = vAnal(tSim).toFixed(2)+' m/s';
-  document.getElementById('sv_vinf').textContent = vinf().toFixed(2)+' m/s';
-  document.getElementById('sv_dvdt').textContent = dvdt(tSim).toFixed(2)+' m/s²';
-  document.getElementById('sv_t').textContent    = tSim.toFixed(2)+' s';
-}
-
-/* ── ANIMACIÓN FÍSICA ── */
-function drawAnim(){
-  const cv=document.getElementById('cv_anim');
-  const dpr=window.devicePixelRatio||1;
-  const W=cv.offsetWidth,H=cv.offsetHeight;
-  cv.width=W*dpr; cv.height=H*dpr;
-  const ctx=cv.getContext('2d');
-  ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#fafbfc'; ctx.fillRect(0,0,W,H);
-
-  const R=Math.min(16,W*0.05);
-  // Margen superior: pelota arriba visible + espacio para etiquetas de vectores
-  const topMargin = R + 60;
-  const botMargin = 28;
-  const maxDrop=Math.max(yPos(MAX_T)*1.05,10);
-  const axX=W*0.46;
-  // toSY mapea y=0 a topMargin y y=maxDrop al borde inferior
-  const toSY=y=>topMargin+(H-topMargin-botMargin)*(y/maxDrop);
-
-  // eje vertical
-  ctx.strokeStyle='#ddd';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(axX,topMargin-R-4);ctx.lineTo(axX,H-botMargin);ctx.stroke();
-
-  // marcas y etiquetas eje
-  ctx.fillStyle='#bbb';ctx.font='10px Arial';ctx.textAlign='right';
-  for(let i=0;i<=4;i++){
-    const yv=(maxDrop/4)*i;
-    const sy=toSY(yv);
-    ctx.fillText(yv.toFixed(0)+'m',axX-5,sy+4);
-    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.strokeStyle='#ddd';ctx.stroke();
-  }
-
-  // pelota — siempre dentro del canvas
-  const py=yPos(tSim);
-  const cy=toSY(py);
-
-  ctx.beginPath();ctx.arc(axX,cy,R,0,2*Math.PI);
-  ctx.fillStyle='#1a6fc4';ctx.fill();
-  ctx.strokeStyle='#0d4a9e';ctx.lineWidth=1.5;ctx.stroke();
-
-  const vNow=vAnal(tSim);
-  // escala de vectores: proporcional a la altura disponible
-  const sc=Math.min((H-topMargin-botMargin)*0.013, 4.5);
-  const Fg_len = m*G*sc;
-  const Fr_len = k*vNow*sc;
-  const Fn_len = Math.abs(m*G - k*vNow)*sc;
-  const Fn_dir = (m*G - k*vNow) >= 0 ? 1 : -1; // 1=abajo, -1=arriba
-
-  // Función para dibujar vector con etiqueta completa en dos líneas
-  function vec(x, y, dyLen, dir, color, lbl1, lbl2){
-    const dy = dyLen * dir;
-    const minLen = 4; // dibuja siempre si tiene algo de longitud
-    const drawLen = Math.max(dyLen, minLen);
-    const actualDy = drawLen * dir;
-    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x, y+actualDy); ctx.stroke();
-    // punta de flecha
-    ctx.beginPath();
-    ctx.moveTo(x, y+actualDy);
-    ctx.lineTo(x-5, y+actualDy - dir*9);
-    ctx.lineTo(x+5, y+actualDy - dir*9);
-    ctx.closePath(); ctx.fill();
-    // etiqueta: dos líneas — símbolo y descripción
-    const lx = x > axX ? x+8 : x-8;
-    const anchor = x > axX ? 'left' : 'right';
-    ctx.textAlign = anchor;
-    ctx.font = 'bold 11px Arial';
-    ctx.fillText(lbl1, lx, y + actualDy*0.4);
-    ctx.font = '9px Arial';
-    ctx.fillStyle = color;
-    ctx.fillText(lbl2, lx, y + actualDy*0.4 + 13);
-  }
-
-  // Fg: peso — hacia abajo — izquierda de la pelota
-  vec(axX - R - 14, cy, Fg_len, 1, '#cc2200', 'Fg', 'Peso');
-
-  // Fr: resistencia del aire — hacia arriba — derecha de la pelota
-  // siempre visible: mínimo 4px aunque v=0
-  vec(axX + R + 14, cy, Math.max(Fr_len, 4), -1, '#1D9E75', 'Fr', 'Resist. aire');
-
-  // Fn: fuerza neta — columna central desplazada
-  if(Fn_len > 1){
-    vec(axX, cy + R + 6, Fn_len, Fn_dir, '#e07000', 'Fn', 'F. neta');
-  } else {
-    // equilibrio — mostrar punto y texto "Fn = 0"
-    ctx.beginPath(); ctx.arc(axX, cy+R+6, 4, 0, 2*Math.PI);
-    ctx.fillStyle='#e07000'; ctx.fill();
-    ctx.font='9px Arial'; ctx.textAlign='center'; ctx.fillStyle='#e07000';
-    ctx.fillText('Fn = 0 (v = v∞)', axX, cy+R+22);
-  }
-
-  // leyenda de colores en esquina
-  const lx0 = W - 10;
-  const ly0 = 12;
-  ctx.font = '9px Arial'; ctx.textAlign = 'right';
-  [['#cc2200','Fg: peso (mg)'],['#1D9E75','Fr: resist. aire (kv)'],['#e07000','Fn: fuerza neta']].forEach((item,i)=>{
-    ctx.fillStyle=item[0];
-    ctx.fillRect(lx0-70, ly0+i*14-8, 10, 8);
-    ctx.fillStyle='#555';
-    ctx.fillText(item[1], lx0, ly0+i*14);
-  });
-
-  // tiempo
-  ctx.fillStyle='#aaa';ctx.font='10px Arial';ctx.textAlign='center';
-  ctx.fillText('t = '+tSim.toFixed(1)+' s', axX, H-8);
-}
-
-/* ── GRÁFICA v(t) ── */
-function drawGraf(){
-  const cv=document.getElementById('cv_graf');
-  const dpr=window.devicePixelRatio||1;
-  const W=cv.offsetWidth,H=cv.offsetHeight;
-  cv.width=W*dpr; cv.height=H*dpr;
-  const ctx=cv.getContext('2d');
-  ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
-
-  const pad={l:46,r:44,t:18,b:36};
-  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
-  const vi=vinf();
-  const maxV=Math.max(vi*1.18,v0*1.18,10);
-
-  const tx=t=>pad.l+t/MAX_T*gW;
-  const ty=v=>pad.t+gH*(1-v/maxV);
-
-  ctx.strokeStyle='#f0f0f0';ctx.lineWidth=1;
-  for(let v=0;v<=maxV;v+=maxV/5){
-    ctx.beginPath();ctx.moveTo(pad.l,ty(v));ctx.lineTo(pad.l+gW,ty(v));ctx.stroke();
-  }
-  for(let t=0;t<=MAX_T;t+=5){
-    ctx.beginPath();ctx.moveTo(tx(t),pad.t);ctx.lineTo(tx(t),pad.t+gH);ctx.stroke();
-  }
-
-  ctx.strokeStyle='#bbb';ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);
-  ctx.stroke();
-
-  ctx.fillStyle='#999';ctx.font='10px Arial';ctx.textAlign='right';
-  for(let v=0;v<=maxV;v+=maxV/5)
-    ctx.fillText(v.toFixed(0),pad.l-5,ty(v)+4);
-  ctx.textAlign='center';
-  for(let t=0;t<=MAX_T;t+=5)
-    ctx.fillText(t,tx(t),pad.t+gH+14);
-  ctx.fillText('t (s)',pad.l+gW/2,H-3);
-  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);
-  ctx.fillText('v (m/s)',0,0);ctx.restore();
-
-  /* v∞ */
-  ctx.strokeStyle='#cc2200';ctx.lineWidth=1.8;ctx.setLineDash([7,5]);
-  ctx.beginPath();ctx.moveTo(pad.l,ty(vi));ctx.lineTo(pad.l+gW,ty(vi));ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle='#cc2200';ctx.font='10px Arial';ctx.textAlign='left';
-  ctx.fillText('v∞='+vi.toFixed(1),pad.l+gW+2,ty(vi)+4);
-
-  /* numérica */
-  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.setLineDash([6,5]);
-  ctx.beginPath();let first=true;
-  for(const p of trailNum){
-    if(p.t>tSim+DT)break;
-    if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}
-    else ctx.lineTo(tx(p.t),ty(p.v));
-  }
-  ctx.stroke();ctx.setLineDash([]);
-
-  /* analítica */
-  ctx.strokeStyle='#1a6fc4';ctx.lineWidth=3;
-  ctx.beginPath();first=true;
-  for(const p of trailAnal){
-    if(p.t>tSim+DT)break;
-    if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}
-    else ctx.lineTo(tx(p.t),ty(p.v));
-  }
-  ctx.stroke();
-
-  /* punto actual */
-  const vNow=vAnal(tSim);
-  ctx.beginPath();ctx.arc(tx(tSim),ty(vNow),5,0,2*Math.PI);
-  ctx.fillStyle='#111';ctx.fill();
-
-  ctx.fillStyle='#333';ctx.font='bold 10px Arial';ctx.textAlign='left';
-  ctx.fillText('v='+vNow.toFixed(2)+' m/s',tx(tSim)+7,ty(vNow)-6);
-}
-
-function render(){updateStats();drawAnim();drawGraf();}
-
-function reset(){
-  tSim=0;playing=false;lastTs=null;
-  const btn=document.getElementById('btn_play');
-  btn.textContent='▶ Iniciar';btn.classList.remove('active');
-  buildTrails();render();
-}
-
-function loop(ts){
-  if(!playing){lastTs=null;return;}
-  if(lastTs===null)lastTs=ts;
-  const dt=Math.min((ts-lastTs)/1000,0.1);
-  lastTs=ts;
-  tSim=Math.min(tSim+dt,MAX_T);
-  render();
-  if(tSim>=MAX_T){
-    playing=false;
-    const btn=document.getElementById('btn_play');
-    btn.textContent='▶ Iniciar';btn.classList.remove('active');
-    return;
-  }
-  requestAnimationFrame(loop);
-}
-
-document.getElementById('btn_play').addEventListener('click',()=>{
-  if(tSim>=MAX_T)tSim=0;
-  playing=!playing;
-  const btn=document.getElementById('btn_play');
-  if(playing){
-    btn.textContent='⏸ Pausar';btn.classList.add('active');
-    requestAnimationFrame(loop);
-  } else {
-    btn.textContent='▶ Iniciar';btn.classList.remove('active');
-  }
-});
-
-document.getElementById('btn_reset').addEventListener('click',reset);
-
-function bindSlider(id,lblId,unit,dec,setter){
-  const sl=document.getElementById(id);
-  const lb=document.getElementById(lblId);
-  sl.addEventListener('input',()=>{
-    setter(parseFloat(sl.value));
-    lb.textContent=parseFloat(sl.value).toFixed(dec)+' '+unit;
-    reset();
-  });
-}
-
-bindSlider('sl_m','lbl_m','kg',1,v=>{m=v;});
-bindSlider('sl_k','lbl_k','kg/s',1,v=>{k=v;});
-bindSlider('sl_v0','lbl_v0','m/s',0,v=>{v0=v;});
-
-window.addEventListener('resize',render);
-reset();
-</script>
 </body>
 </html>
