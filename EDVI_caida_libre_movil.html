@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EDVI — Caída libre con resistencia del aire</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overscroll-behavior:none}
+
+/* ── LAYOUT DESKTOP (≥700px) ── */
+.container{display:flex;height:100vh;min-height:500px}
+.sidebar{
+  width:250px;min-width:200px;background:#fff;
+  border-right:1px solid #e0e0e0;
+  padding:14px 12px;display:flex;flex-direction:column;gap:10px;
+  overflow-y:auto;flex-shrink:0
+}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.canvases{flex:1;display:grid;grid-template-rows:1fr 1fr;min-height:0}
+.canvas-wrap{
+  position:relative;min-height:0;overflow:hidden;
+  background:#fff;border-bottom:1px solid #e8e8e8
+}
+.canvas-wrap canvas{display:block;width:100%;height:100%}
+
+/* ── LAYOUT MÓVIL (<700px) ── */
+@media(max-width:699px){
+  .container{flex-direction:column;height:auto;min-height:100vh}
+  .sidebar{
+    width:100%;border-right:none;border-bottom:1px solid #e0e0e0;
+    padding:12px;gap:8px
+  }
+  .main{flex:1}
+  .canvases{display:flex;flex-direction:column}
+  .canvas-wrap{height:280px;flex-shrink:0}
+  .canvas-wrap:last-child{border-bottom:none}
+}
+
+/* ── COMPONENTES ── */
+.sidebar h2{font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.4}
+
+.ctrl-group{display:flex;flex-direction:column;gap:3px}
+.ctrl-group label{font-size:11px;color:#666}
+.ctrl-row{display:flex;align-items:center;gap:8px}
+.ctrl-row input[type=range]{flex:1;height:4px;accent-color:#1a6fc4;cursor:pointer}
+.ctrl-row span{font-size:12px;font-weight:700;min-width:56px;text-align:right;color:#222}
+
+/* En móvil los controles van en fila de 3 */
+@media(max-width:699px){
+  .ctrls-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .ctrl-group label{font-size:10px}
+  .ctrl-row span{font-size:11px;min-width:44px}
+}
+
+.btn-row{display:flex;gap:8px}
+.btn{
+  flex:1;padding:9px 6px;border-radius:8px;border:1px solid #ddd;
+  background:#fff;cursor:pointer;font-size:12px;font-weight:600;
+  color:#333;transition:background .15s;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation
+}
+.btn:active{background:#e8e8e8}
+.btn.active{background:#1D9E75;color:#fff;border-color:#0F6E56}
+
+.section-label{
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:#999;text-transform:uppercase;margin-top:2px
+}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat{background:#f7f8fa;border-radius:8px;padding:7px 10px;border:1px solid #ebebeb}
+.stat-label{font-size:10px;color:#888;margin-bottom:1px}
+.stat-val{font-size:15px;font-weight:700;color:#1a1a1a}
+
+.eq-box{
+  background:#eef4fc;border-radius:8px;padding:7px 10px;
+  font-size:12px;font-weight:600;color:#0d4a9e;text-align:center
+}
+.eq-box+.eq-box{margin-top:4px}
+
+.legend{display:flex;flex-direction:column;gap:4px}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}
+.leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
+.leg-line.dashed{background:none;border-top:2.5px dashed}
+
+/* En móvil ocultar leyenda y ecuaciones para ahorrar espacio */
+@media(max-width:699px){
+  .hide-mobile{display:none}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .stat-val{font-size:13px}
+}
+
+.canvas-label{
+  position:absolute;top:7px;left:10px;
+  font-size:10px;font-weight:700;color:#aaa;letter-spacing:.05em;
+  text-transform:uppercase;pointer-events:none;z-index:1
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h2>Caída libre con resistencia del aire</h2>
+
+    <div class="ctrls-grid">
+      <div class="ctrl-group">
+        <label>masa m (kg)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_m" min="1" max="20" step="0.5" value="5">
+          <span id="lbl_m">5.0 kg</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <label>coef. resist. k (kg/s)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_k" min="0.1" max="5" step="0.1" value="1">
+          <span id="lbl_k">1.0 kg/s</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <label>vel. inicial v₀ (m/s)</label>
+        <div class="ctrl-row">
+          <input type="range" id="sl_v0" min="0" max="30" step="1" value="0">
+          <span id="lbl_v0">0 m/s</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="btn_play">▶ Iniciar</button>
+      <button class="btn" id="btn_reset">↺ Reiniciar</button>
+    </div>
+
+    <div class="section-label">Lectura en tiempo real</div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">v(t)</div>
+        <div class="stat-val" id="sv_vt">0.00 m/s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">v∞ = mg/k</div>
+        <div class="stat-val" id="sv_vinf">49.00 m/s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">dv/dt</div>
+        <div class="stat-val" id="sv_dvdt">9.80 m/s²</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">t (s)</div>
+        <div class="stat-val" id="sv_t">0.00 s</div>
+      </div>
+    </div>
+
+    <div class="hide-mobile">
+      <div class="section-label" style="margin-bottom:6px">Modelo matemático</div>
+      <div class="eq-box">m · dv/dt = mg − kv</div>
+      <div class="eq-box">v(t) = v∞(1 − e<sup>−kt/m</sup>)</div>
+    </div>
+
+    <div class="hide-mobile">
+      <div class="section-label" style="margin-bottom:6px">Leyenda</div>
+      <div class="legend">
+        <div class="leg-item">
+          <span class="leg-line" style="background:#1a6fc4"></span>Solución analítica
+        </div>
+        <div class="leg-item">
+          <span class="leg-line dashed" style="border-color:#1D9E75"></span>Solución numérica (RK4)
+        </div>
+        <div class="leg-item">
+          <span class="leg-line dashed" style="border-color:#cc2200"></span>Velocidad límite v∞
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICAS -->
+  <div class="main">
+    <div class="canvases">
+      <div class="canvas-wrap">
+        <span class="canvas-label">Animación física</span>
+        <canvas id="cv_anim"></canvas>
+      </div>
+      <div class="canvas-wrap">
+        <span class="canvas-label">Gráfica v(t)</span>
+        <canvas id="cv_graf"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const G=9.8,MAX_T=30,DT=0.05;
+let m=5,k=1,v0=0,tSim=0,playing=false,lastTs=null;
+let trailNum=[],trailAnal=[];
+
+const vinf=()=>m*G/k;
+const vAnal=t=>{const vi=vinf();return vi-(vi-v0)*Math.exp(-(k/m)*t)};
+const dvdt=t=>G-(k/m)*vAnal(t);
+const yPos=t=>{const vi=vinf();return vi*t+(vi-v0)*(m/k)*(Math.exp(-(k/m)*t)-1)};
+
+function rk4(v,dt){
+  const f=v=>G-(k/m)*v;
+  const k1=f(v),k2=f(v+dt/2*k1),k3=f(v+dt/2*k2),k4=f(v+dt*k3);
+  return v+dt/6*(k1+2*k2+2*k3+k4);
+}
+
+function buildTrails(){
+  trailNum=[];trailAnal=[];
+  let vn=v0;
+  for(let t=0;t<=MAX_T+DT;t+=DT){
+    trailNum.push({t,v:vn});
+    trailAnal.push({t,v:vAnal(t)});
+    vn=rk4(vn,DT);
+  }
+}
+
+function updateStats(){
+  document.getElementById('sv_vt').textContent   = vAnal(tSim).toFixed(2)+' m/s';
+  document.getElementById('sv_vinf').textContent = vinf().toFixed(2)+' m/s';
+  document.getElementById('sv_dvdt').textContent = dvdt(tSim).toFixed(2)+' m/s²';
+  document.getElementById('sv_t').textContent    = tSim.toFixed(2)+' s';
+}
+
+/* ── ANIMACIÓN FÍSICA ── */
+function drawAnim(){
+  const cv=document.getElementById('cv_anim');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth,H=cv.offsetHeight;
+  cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fafbfc'; ctx.fillRect(0,0,W,H);
+
+  const maxDrop=Math.max(yPos(MAX_T)*1.05,10);
+  const axX=W*0.45;
+  const toSY=y=>H*0.04+(H*0.90)*(y/maxDrop);
+
+  ctx.strokeStyle='#ddd';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(axX,H*0.02);ctx.lineTo(axX,H*0.97);ctx.stroke();
+
+  ctx.fillStyle='#bbb';ctx.font=`10px Arial`;ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const yv=(maxDrop/4)*i;
+    const sy=toSY(yv);
+    ctx.fillText(yv.toFixed(0)+'m',axX-5,sy+4);
+    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.stroke();
+  }
+
+  const py=yPos(tSim);
+  const cy=toSY(py);
+  const R=Math.min(16,W*0.06);
+
+  ctx.beginPath();ctx.arc(axX,cy,R,0,2*Math.PI);
+  ctx.fillStyle='#1a6fc4';ctx.fill();
+  ctx.strokeStyle='#0d4a9e';ctx.lineWidth=1.5;ctx.stroke();
+
+  const vNow=vAnal(tSim);
+  const sc=H*0.012;
+  const Fg=m*G*sc, Fr=k*vNow*sc, Fn=(m*G-k*vNow)*sc;
+
+  function vec(x,y,dy,color,lbl){
+    if(Math.abs(dy)<2)return;
+    const dir=dy>0?1:-1;
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-dir*9);ctx.lineTo(x+5,y+dy-dir*9);
+    ctx.closePath();ctx.fill();
+    ctx.font='bold 10px Arial';
+    ctx.textAlign=x>axX?'left':'right';
+    ctx.fillText(lbl,x>axX?x+7:x-7,y+dy*0.5+4);
+  }
+
+  vec(axX-R-10,cy, Fg, '#cc2200','Fg');
+  vec(axX+R+10,cy,-Fr,'#1D9E75','Fr');
+  vec(axX,cy+R+4, Fn, '#e07000','Fn');
+
+  ctx.fillStyle='#aaa';ctx.font='10px Arial';ctx.textAlign='center';
+  ctx.fillText('t = '+tSim.toFixed(1)+' s',axX,H*0.98);
+}
+
+/* ── GRÁFICA v(t) ── */
+function drawGraf(){
+  const cv=document.getElementById('cv_graf');
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth,H=cv.offsetHeight;
+  cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  const pad={l:46,r:44,t:18,b:36};
+  const gW=W-pad.l-pad.r, gH=H-pad.t-pad.b;
+  const vi=vinf();
+  const maxV=Math.max(vi*1.18,v0*1.18,10);
+
+  const tx=t=>pad.l+t/MAX_T*gW;
+  const ty=v=>pad.t+gH*(1-v/maxV);
+
+  ctx.strokeStyle='#f0f0f0';ctx.lineWidth=1;
+  for(let v=0;v<=maxV;v+=maxV/5){
+    ctx.beginPath();ctx.moveTo(pad.l,ty(v));ctx.lineTo(pad.l+gW,ty(v));ctx.stroke();
+  }
+  for(let t=0;t<=MAX_T;t+=5){
+    ctx.beginPath();ctx.moveTo(tx(t),pad.t);ctx.lineTo(tx(t),pad.t+gH);ctx.stroke();
+  }
+
+  ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);
+  ctx.stroke();
+
+  ctx.fillStyle='#999';ctx.font='10px Arial';ctx.textAlign='right';
+  for(let v=0;v<=maxV;v+=maxV/5)
+    ctx.fillText(v.toFixed(0),pad.l-5,ty(v)+4);
+  ctx.textAlign='center';
+  for(let t=0;t<=MAX_T;t+=5)
+    ctx.fillText(t,tx(t),pad.t+gH+14);
+  ctx.fillText('t (s)',pad.l+gW/2,H-3);
+  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText('v (m/s)',0,0);ctx.restore();
+
+  /* v∞ */
+  ctx.strokeStyle='#cc2200';ctx.lineWidth=1.8;ctx.setLineDash([7,5]);
+  ctx.beginPath();ctx.moveTo(pad.l,ty(vi));ctx.lineTo(pad.l+gW,ty(vi));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#cc2200';ctx.font='10px Arial';ctx.textAlign='left';
+  ctx.fillText('v∞='+vi.toFixed(1),pad.l+gW+2,ty(vi)+4);
+
+  /* numérica */
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.setLineDash([6,5]);
+  ctx.beginPath();let first=true;
+  for(const p of trailNum){
+    if(p.t>tSim+DT)break;
+    if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}
+    else ctx.lineTo(tx(p.t),ty(p.v));
+  }
+  ctx.stroke();ctx.setLineDash([]);
+
+  /* analítica */
+  ctx.strokeStyle='#1a6fc4';ctx.lineWidth=3;
+  ctx.beginPath();first=true;
+  for(const p of trailAnal){
+    if(p.t>tSim+DT)break;
+    if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}
+    else ctx.lineTo(tx(p.t),ty(p.v));
+  }
+  ctx.stroke();
+
+  /* punto actual */
+  const vNow=vAnal(tSim);
+  ctx.beginPath();ctx.arc(tx(tSim),ty(vNow),5,0,2*Math.PI);
+  ctx.fillStyle='#111';ctx.fill();
+
+  ctx.fillStyle='#333';ctx.font='bold 10px Arial';ctx.textAlign='left';
+  ctx.fillText('v='+vNow.toFixed(2)+' m/s',tx(tSim)+7,ty(vNow)-6);
+}
+
+function render(){updateStats();drawAnim();drawGraf();}
+
+function reset(){
+  tSim=0;playing=false;lastTs=null;
+  const btn=document.getElementById('btn_play');
+  btn.textContent='▶ Iniciar';btn.classList.remove('active');
+  buildTrails();render();
+}
+
+function loop(ts){
+  if(!playing){lastTs=null;return;}
+  if(lastTs===null)lastTs=ts;
+  const dt=Math.min((ts-lastTs)/1000,0.1);
+  lastTs=ts;
+  tSim=Math.min(tSim+dt,MAX_T);
+  render();
+  if(tSim>=MAX_T){
+    playing=false;
+    const btn=document.getElementById('btn_play');
+    btn.textContent='▶ Iniciar';btn.classList.remove('active');
+    return;
+  }
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('btn_play').addEventListener('click',()=>{
+  if(tSim>=MAX_T)tSim=0;
+  playing=!playing;
+  const btn=document.getElementById('btn_play');
+  if(playing){
+    btn.textContent='⏸ Pausar';btn.classList.add('active');
+    requestAnimationFrame(loop);
+  } else {
+    btn.textContent='▶ Iniciar';btn.classList.remove('active');
+  }
+});
+
+document.getElementById('btn_reset').addEventListener('click',reset);
+
+function bindSlider(id,lblId,unit,dec,setter){
+  const sl=document.getElementById(id);
+  const lb=document.getElementById(lblId);
+  sl.addEventListener('input',()=>{
+    setter(parseFloat(sl.value));
+    lb.textContent=parseFloat(sl.value).toFixed(dec)+' '+unit;
+    reset();
+  });
+}
+
+bindSlider('sl_m','lbl_m','kg',1,v=>{m=v;});
+bindSlider('sl_k','lbl_k','kg/s',1,v=>{k=v;});
+bindSlider('sl_v0','lbl_v0','m/s',0,v=>{v0=v;});
+
+window.addEventListener('resize',render);
+reset();
+</script>
+</body>
+</html>
