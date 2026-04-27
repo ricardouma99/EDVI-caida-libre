@@ -4,117 +4,132 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EDVI-1 — Exploración del fenómeno físico</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'\\(',right:'\\)',display:false}]})"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overscroll-behavior:none}
 .container{display:flex;height:100vh;min-height:500px}
-.sidebar{width:260px;min-width:210px;background:#fff;border-right:1px solid #e0e0e0;padding:14px 12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex-shrink:0}
+.sidebar{width:268px;min-width:220px;background:#fff;border-right:1px solid #e0e0e0;padding:14px 12px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex-shrink:0}
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .canvases{flex:1;display:grid;grid-template-rows:1fr 1fr;min-height:0}
 .canvas-wrap{position:relative;min-height:0;overflow:hidden;background:#fff;border-bottom:1px solid #e8e8e8}
-.canvas-wrap canvas{display:block;width:100%;height:100%}
+.canvas-wrap canvas{display:block;width:100%;height:100%;position:absolute;top:0;left:0}
 @media(max-width:699px){
   .container{flex-direction:column;height:auto;min-height:100vh}
   .sidebar{width:100%;border-right:none;border-bottom:1px solid #e0e0e0;padding:12px;gap:8px}
   .canvases{display:flex;flex-direction:column}
-  .canvas-wrap{height:260px;flex-shrink:0}
+  .canvas-wrap{height:280px;flex-shrink:0}
 }
 .sidebar h2{font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.4}
-.badge{display:inline-block;background:#eef4fc;color:#0d4a9e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:4px}
+.badge{display:inline-block;background:#eef4fc;color:#0d4a9e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:2px}
+.progress-bar{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.prog-step{flex:1;height:4px;border-radius:2px;background:#e0e0e0}
+.prog-step.active{background:#1a6fc4}
+.prog-label{font-size:9px;color:#aaa;letter-spacing:.04em}
 .ctrl-group{display:flex;flex-direction:column;gap:3px}
 .ctrl-group label{font-size:11px;color:#666}
 .ctrl-row{display:flex;align-items:center;gap:8px}
 .ctrl-row input[type=range]{
   flex:1;height:6px;accent-color:#1a6fc4;cursor:pointer;
-  touch-action:none;
-  -webkit-tap-highlight-color:transparent;
-  -webkit-appearance:none;
-  border-radius:3px;background:#dde1ea;outline:none;
+  touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;border-radius:3px;background:#dde1ea;outline:none;
 }
 .ctrl-row input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:28px;height:28px;
-  border-radius:50%;
-  background:#1a6fc4;
-  border:3px solid #fff;
-  box-shadow:0 1px 6px rgba(26,111,196,.4);
+  -webkit-appearance:none;width:28px;height:28px;border-radius:50%;
+  background:#1a6fc4;border:3px solid #fff;box-shadow:0 1px 6px rgba(26,111,196,.4);
 }
 .ctrl-row input[type=range]::-moz-range-thumb{
-  width:28px;height:28px;border-radius:50%;
-  background:#1a6fc4;border:3px solid #fff;
+  width:28px;height:28px;border-radius:50%;background:#1a6fc4;border:3px solid #fff;
 }
 .num-input{
-  font-size:12px;font-weight:700;
-  font-family:'Segoe UI',Arial,sans-serif;
-  color:#1a6fc4;background:#eef4fc;
-  border:1.5px solid #93c5fd;
-  border-radius:5px;padding:3px 6px;
-  width:72px;text-align:right;
-  -moz-appearance:textfield;
-  touch-action:manipulation;
+  font-size:12px;font-weight:700;font-family:'Segoe UI',Arial,sans-serif;
+  color:#1a6fc4;background:#eef4fc;border:1.5px solid #93c5fd;
+  border-radius:5px;padding:3px 6px;width:72px;text-align:right;
+  -moz-appearance:textfield;touch-action:manipulation;
 }
-.num-input::-webkit-inner-spin-button,
-.num-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .num-input:focus{outline:2px solid #1a6fc4;outline-offset:1px}
-.ctrl-row span{font-size:12px;font-weight:700;min-width:56px;text-align:right;color:#222}
 .ctrls-grid{display:flex;flex-direction:column;gap:8px}
 .btn-row{display:flex;gap:8px}
 .btn{flex:1;padding:9px 6px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#333;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .btn:active{background:#e8e8e8}
 .btn.active{background:#1D9E75;color:#fff;border-color:#0F6E56}
+.btn-contrast{width:100%;padding:8px 6px;border-radius:8px;border:2px solid #7c3aed;background:#f5f0ff;cursor:pointer;font-size:11px;font-weight:700;color:#5b21b6;transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn-contrast:active{background:#ede9fe}
+.btn-contrast.sin-aire{background:#7c3aed;color:#fff;border-color:#5b21b6}
 .section-label{font-size:10px;font-weight:700;letter-spacing:.08em;color:#999;text-transform:uppercase;margin-top:2px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat{background:#f7f8fa;border-radius:8px;padding:7px 10px;border:1px solid #ebebeb}
-.stat-label{font-size:10px;color:#888;margin-bottom:1px}
+.stat-label{font-size:10px;color:#888;margin-bottom:2px}
 .stat-val{font-size:15px;font-weight:700;color:#1a1a1a}
-.eq-box{background:#eef4fc;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;color:#0d4a9e;text-align:center}
-.eq-box+.eq-box{margin-top:4px}
-.task-box{background:#fffbea;border:1px solid #f0d060;border-radius:8px;padding:8px 10px;font-size:11px;color:#665500;line-height:1.5}
+.task-box{background:#fffbea;border:1px solid #f0d060;border-radius:8px;padding:8px 10px;font-size:11px;color:#665500;line-height:1.6}
 .task-box strong{display:block;font-size:11px;font-weight:700;color:#443300;margin-bottom:4px}
-.legend{display:flex;flex-direction:column;gap:4px}
+.legend{display:flex;flex-direction:column;gap:5px}
 .leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}
 .leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
-.leg-line.dashed{background:none;border-top:2.5px dashed}
-.canvas-label{position:absolute;top:7px;left:10px;font-size:10px;font-weight:700;color:#aaa;letter-spacing:.05em;text-transform:uppercase;pointer-events:none;z-index:1}
+.leg-line-dashed{width:22px;height:0;border-top:2.5px dashed #7c3aed;flex-shrink:0}
+
+/* ── overlays sobre canvas ─────────────────── */
+.cv-title{position:absolute;top:7px;left:10px;font-size:10px;font-weight:700;color:#aaa;letter-spacing:.05em;text-transform:uppercase;pointer-events:none;z-index:3}
+.mode-badge{position:absolute;top:7px;right:10px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;pointer-events:none;z-index:3}
+.mode-badge.con-aire{background:#eef4fc;color:#0d4a9e}
+.mode-badge.sin-aire{background:#f5f0ff;color:#5b21b6}
+.vinf-flash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(224,112,0,0.92);color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:10;white-space:nowrap}
+.vinf-flash.show{opacity:1}
+/* overlay genérico */
+.ov{position:absolute;pointer-events:none;z-index:4;line-height:1;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="sidebar">
     <span class="badge">AD1 · EDVI-1</span>
+    <div class="progress-bar">
+      <div class="prog-step active"></div>
+      <div class="prog-step"></div>
+      <div class="prog-step"></div>
+      <span class="prog-label">Exploración · Construcción · Validación</span>
+    </div>
     <h2>Exploración del fenómeno físico</h2>
 
     <div class="task-box">
-      <strong>Actividad 3 — Preguntas guía</strong>
-      1. Observa el movimiento del cuerpo. ¿Qué le ocurre a su velocidad con el tiempo?<br>
-      2. ¿Qué representan las flechas que ves sobre el cuerpo?<br>
-      3. Mueve el deslizador de masa m. ¿Qué cambia en el movimiento?<br>
-      4. ¿La velocidad crece indefinidamente? ¿Por qué crees que ocurre eso?
+      <strong>📋 Preguntas guía</strong>
+      1. ¿Qué le ocurre a \(v\) del balón con el tiempo \(t\)?<br>
+      2. ¿Crece sin límite o se estabiliza? ¿Cuándo?<br>
+      3. Cambia \(m\). ¿Qué observas en \(v(t)\)?<br>
+      4. Prueba <em>«Sin resistencia del aire»</em>. ¿Qué diferencia hay?
     </div>
 
     <div class="ctrls-grid">
       <div class="ctrl-group">
-        <label>masa m (kg)</label>
+        <label>⚽ masa del balón \(m\) (kg)</label>
         <div class="ctrl-row">
           <input type="range" id="sl_m" min="1" max="20" step="0.5" value="5">
           <input type="number" class="num-input" id="ni_m" min="1" max="20" step="0.5" value="5">
         </div>
       </div>
       <div class="ctrl-group">
-        <label>coef. resistencia k (kg/s)</label>
+        <label>💨 resistencia del aire \(k\) (kg/s)</label>
         <div class="ctrl-row">
           <input type="range" id="sl_k" min="0.1" max="5" step="0.1" value="1">
           <input type="number" class="num-input" id="ni_k" min="0.1" max="5" step="0.1" value="1">
         </div>
       </div>
       <div class="ctrl-group">
-        <label>velocidad inicial v₀ (m/s)</label>
+        <label>velocidad inicial \(v_0\) (m/s)</label>
         <div class="ctrl-row">
           <input type="range" id="sl_v0" min="0" max="30" step="1" value="0">
           <input type="number" class="num-input" id="ni_v0" min="0" max="30" step="1" value="0">
         </div>
       </div>
     </div>
+
+    <button class="btn-contrast" id="btn_contrast" onclick="toggleContrast()">
+      🌬️ Activar modo «Sin resistencia del aire»
+    </button>
 
     <div class="btn-row">
       <button class="btn" id="btn_play">▶ Iniciar</button>
@@ -123,29 +138,38 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overs
 
     <div class="section-label">Lectura en tiempo real</div>
     <div class="stats">
-      <div class="stat"><div class="stat-label">v(t) analítica</div><div class="stat-val" id="sv_vt">0.00 m/s</div></div>
-      <div class="stat"><div class="stat-label">posición y(t)</div><div class="stat-val" id="sv_vinf">0.00 m</div></div>
-      <div class="stat"><div class="stat-label">dv/dt</div><div class="stat-val" id="sv_dvdt">9.80 m/s²</div></div>
-      <div class="stat"><div class="stat-label">t (s)</div><div class="stat-val" id="sv_t">0.00 s</div></div>
+      <div class="stat"><div class="stat-label">\(v(t)\) (m/s)</div><div class="stat-val" id="sv_vt">0.00</div></div>
+      <div class="stat"><div class="stat-label">\(y(t)\) (m)</div><div class="stat-val" id="sv_y">0.00</div></div>
+      <div class="stat"><div class="stat-label">\(t\) (s)</div><div class="stat-val" id="sv_t">0.00</div></div>
+      <div class="stat"><div class="stat-label">\(F_n\) (N)</div><div class="stat-val" id="sv_fn">—</div></div>
     </div>
+
+    <!-- Botón revelar etiquetas de fuerzas -->
+    <button class="btn-contrast" id="btn_labels" onclick="toggleLabels()"
+      style="border-color:#e07000;background:#fff8f0;color:#b45000;margin-top:2px">
+      🏷️ Mostrar nombres de las fuerzas
+    </button>
 
     <div class="section-label" style="margin-bottom:4px">Leyenda</div>
     <div class="legend">
-      <div class="leg-item"><span class="leg-line" style="background:#cc2200"></span>Fg: peso (mg)</div>
-      <div class="leg-item"><span class="leg-line" style="background:#1D9E75"></span>Fr: resistencia del aire (kv)</div>
-      <div class="leg-item"><span class="leg-line" style="background:#e07000"></span>Fn: fuerza neta</div>
-      <div class="leg-item"><span class="leg-line" style="background:#1a6fc4"></span>Curva de v(t) observada</div>
+      <div class="leg-item"><span class="leg-line" style="background:#cc2200"></span><span id="leg_fg">Fuerza roja ↓</span></div>
+      <div class="leg-item"><span class="leg-line" style="background:#1D9E75"></span><span id="leg_fr">Fuerza verde ↑</span></div>
+      <div class="leg-item"><span class="leg-line" style="background:#e07000"></span><span id="leg_fn">Fuerza naranja</span></div>
+      <div class="leg-item"><span class="leg-line" style="background:#1a6fc4"></span>\(v(t)\) con aire</div>
+      <div class="leg-item"><span class="leg-line-dashed"></span>\(v(t)\) sin aire (referencia)</div>
     </div>
   </div>
 
   <div class="main">
     <div class="canvases">
-      <div class="canvas-wrap">
-        <span class="canvas-label">Animación física — vectores de fuerza</span>
+      <div class="canvas-wrap" id="wrap_anim">
+        <span class="cv-title">Animación física</span>
+        <span class="mode-badge con-aire" id="mode_badge">Con resistencia del aire</span>
         <canvas id="cv_anim"></canvas>
+        <div class="vinf-flash" id="vinf_flash">🎯 ¡Velocidad límite alcanzada!</div>
       </div>
-      <div class="canvas-wrap">
-        <span class="canvas-label">Comportamiento de v(t) — observa la tendencia</span>
+      <div class="canvas-wrap" id="wrap_graf">
+        <span class="cv-title">Comportamiento de \(v(t)\) — observa la tendencia</span>
         <canvas id="cv_graf"></canvas>
       </div>
     </div>
@@ -153,142 +177,484 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;overs
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════
 const G=9.8,MAX_T=30,DT=0.05;
 let m=5,k=1,v0=0,tSim=0,playing=false,lastTs=null;
-let trailNum=[],trailAnal=[];
+let trailAnal=[],trailFree=[];
+let contrastMode=false,vinflashed=false,ballHistory=[];
 
-const vinf=()=>m*G/k;
-const vAnal=t=>{const vi=vinf();return vi-(vi-v0)*Math.exp(-(k/m)*t)};
-const dvdt=t=>G-(k/m)*vAnal(t);
-const yPos=t=>{const vi=vinf();return vi*t+(vi-v0)*(m/k)*(Math.exp(-(k/m)*t)-1)};
-function rk4(v,dt){const f=v=>G-(k/m)*v;const k1=f(v),k2=f(v+dt/2*k1),k3=f(v+dt/2*k2),k4=f(v+dt*k3);return v+dt/6*(k1+2*k2+2*k3+k4);}
+const vinf  =()=>m*G/k;
+const vAnal =t=>{const vi=vinf();return vi-(vi-v0)*Math.exp(-(k/m)*t)};
+const vFree =t=>v0+G*t;
+const yPos  =t=>{const vi=vinf();return vi*t+(vi-v0)*(m/k)*(Math.exp(-(k/m)*t)-1)};
 
 function buildTrails(){
-  trailNum=[];trailAnal=[];let vn=v0;
-  for(let t=0;t<=MAX_T+DT;t+=DT){trailNum.push({t,v:vn});trailAnal.push({t,v:vAnal(t)});vn=rk4(vn,DT);}
+  trailAnal=[];trailFree=[];
+  for(let t=0;t<=MAX_T+DT;t+=DT){
+    trailAnal.push({t,v:vAnal(t)});
+    trailFree.push({t,v:vFree(t)});
+  }
 }
 
+// ══════════════════════════════════════════════
+// SISTEMA DE OVERLAYS KaTeX
+// Cada overlay se identifica por id y vive dentro
+// del canvas-wrap que se especifique.
+// ══════════════════════════════════════════════
+const OVC={};  // cache: id -> {el, tex}
+
+function _ensureEl(wrapId,id,isKatex,content,extraCss){
+  let entry=OVC[id];
+  if(!entry){
+    const el=document.createElement('div');
+    el.className='ov';
+    if(extraCss)Object.assign(el.style,extraCss);
+    document.getElementById(wrapId).appendChild(el);
+    entry={el,tex:null};
+    OVC[id]=entry;
+  }
+  // mover de wrap si es necesario
+  const wrap=document.getElementById(wrapId);
+  if(entry.el.parentElement!==wrap)wrap.appendChild(entry.el);
+  // actualizar contenido solo si cambió
+  if(entry.tex!==content){
+    if(isKatex){
+      try{katex.render(content,entry.el,{throwOnError:false,displayMode:false});}
+      catch(e){entry.el.textContent=content;}
+    } else {
+      entry.el.textContent=content;
+    }
+    entry.tex=content;
+  }
+  return entry.el;
+}
+
+// Coloca overlay KaTeX en wrapId
+function kov(wrapId,id,tex,pos,extraCss={}){
+  if(!window.katex)return; // KaTeX aún no cargó
+  const el=_ensureEl(wrapId,id,true,tex,extraCss);
+  Object.assign(el.style,{display:'block',...pos});
+}
+
+// Coloca overlay texto plano
+function pov(wrapId,id,text,pos,extraCss={}){
+  const el=_ensureEl(wrapId,id,false,text,extraCss);
+  Object.assign(el.style,{display:'block',...pos});
+}
+
+function hov(id){
+  if(OVC[id])OVC[id].el.style.display='none';
+}
+
+// ══════════════════════════════════════════════
+// BALÓN
+// ══════════════════════════════════════════════
+const ballR=()=>Math.max(10,Math.min(28,10+m*0.9));
+
+function drawBall(ctx,cx,cy,R,spin){
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.22)';ctx.shadowBlur=8;ctx.shadowOffsetY=4;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);
+  ctx.fillStyle='#f8f8f8';ctx.fill();ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(spin);
+  ctx.beginPath();
+  for(let i=0;i<5;i++){const a=i*2*Math.PI/5-Math.PI/2;ctx.lineTo(R*0.32*Math.cos(a),R*0.32*Math.sin(a));}
+  ctx.closePath();ctx.fillStyle='#111';ctx.fill();
+  for(let i=0;i<5;i++){
+    const a=i*2*Math.PI/5-Math.PI/2;
+    const px=Math.cos(a)*R*0.58,py=Math.sin(a)*R*0.58;
+    ctx.save();ctx.translate(px,py);ctx.rotate(a+Math.PI/2);
+    ctx.beginPath();
+    for(let j=0;j<5;j++){const b=j*2*Math.PI/5-Math.PI/2;ctx.lineTo(R*0.18*Math.cos(b),R*0.18*Math.sin(b));}
+    ctx.closePath();ctx.fillStyle='#111';ctx.fill();ctx.restore();
+  }
+  ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=0.8;
+  for(let i=0;i<5;i++){const a=i*2*Math.PI/5;ctx.beginPath();ctx.arc(0,0,R*0.55,a,a+Math.PI/5);ctx.stroke();}
+  ctx.restore();
+  ctx.save();
+  const grd=ctx.createRadialGradient(cx-R*0.3,cy-R*0.3,R*0.05,cx,cy,R);
+  grd.addColorStop(0,'rgba(255,255,255,0.52)');grd.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fillStyle=grd;ctx.fill();ctx.restore();
+}
+
+function drawBuilding(ctx,W,H){
+  const bW=Math.min(W*0.28,90),bH=H*0.78,bX=W*0.72,bY=H-bH;
+  ctx.fillStyle='#d6dbe3';ctx.fillRect(bX,bY,bW,bH);
+  ctx.fillStyle='#bcc3ce';ctx.fillRect(bX+bW,bY,bW*0.12,bH);
+  const cols=3,rows=Math.floor(bH/28);
+  const wW=bW*0.18,wH=bH/rows*0.4;
+  const wPX=(bW-cols*wW)/(cols+1),wPY=(bH-rows*wH)/(rows+1);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const wx=bX+wPX+(wW+wPX)*c,wy=bY+wPY+(wH+wPY)*r;
+    ctx.fillStyle=Math.sin(r*2.3+c*1.7)>0?'#fde68a':'#8899aa';ctx.fillRect(wx,wy,wW,wH);
+    ctx.strokeStyle='#aab';ctx.lineWidth=0.5;ctx.strokeRect(wx,wy,wW,wH);
+  }
+  ctx.fillStyle='#b0b8c4';ctx.fillRect(bX-4,bY,bW+8,8);
+  ctx.strokeStyle='#8899aa';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(bX+bW/2,bY);ctx.lineTo(bX+bW/2,bY-20);ctx.stroke();
+  ctx.beginPath();ctx.arc(bX+bW/2,bY-22,3,0,2*Math.PI);ctx.fillStyle='#cc2200';ctx.fill();
+  const px=bX+bW/2+12,py=bY-1;
+  ctx.strokeStyle='#556';ctx.lineWidth=1.5;ctx.lineCap='round';
+  ctx.beginPath();ctx.arc(px,py-11,3.5,0,2*Math.PI);ctx.fillStyle='#ffcba4';ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py-7.5);ctx.lineTo(px,py);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py-5);ctx.lineTo(px-6,py-10);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py-5);ctx.lineTo(px+5,py-9);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-3,py+7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+3,py+7);ctx.stroke();
+}
+
+function drawTrail(ctx){
+  for(let i=0;i<ballHistory.length;i++){
+    const al=(i/ballHistory.length)*0.22,r=ballR()*(0.3+0.5*i/ballHistory.length);
+    ctx.beginPath();ctx.arc(ballHistory[i].x,ballHistory[i].y,r,0,2*Math.PI);
+    ctx.fillStyle=`rgba(26,111,196,${al})`;ctx.fill();
+  }
+}
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
 function updateStats(){
-  const vt=vAnal(tSim),vi=vinf();
-  document.getElementById('sv_vt').textContent=vt.toFixed(2)+' m/s';
-  document.getElementById('sv_vinf').textContent=yPos(tSim).toFixed(1)+' m';
-  document.getElementById('sv_dvdt').textContent=dvdt(tSim).toFixed(2)+' m/s²';
-  document.getElementById('sv_t').textContent=tSim.toFixed(2)+' s';
-
+  const vt=vAnal(tSim),fn=m*G-k*vt;
+  document.getElementById('sv_vt').textContent=vt.toFixed(2);
+  document.getElementById('sv_y').textContent=yPos(tSim).toFixed(1);
+  document.getElementById('sv_t').textContent=tSim.toFixed(2);
+  document.getElementById('sv_fn').textContent=fn.toFixed(2);
+  if(!vinflashed&&vt>=vinf()*0.985&&tSim>1){
+    vinflashed=true;
+    const fl=document.getElementById('vinf_flash');
+    fl.classList.add('show');
+    setTimeout(()=>fl.classList.remove('show'),2800);
+  }
 }
 
+// ══════════════════════════════════════════════
+// DIBUJO ANIMACIÓN
+// ══════════════════════════════════════════════
 function drawAnim(){
   const cv=document.getElementById('cv_anim');
   const dpr=window.devicePixelRatio||1;
   const W=cv.offsetWidth,H=cv.offsetHeight;
+  if(!W||!H)return;
   cv.width=W*dpr;cv.height=H*dpr;
   const ctx=cv.getContext('2d');
   ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#fafbfc';ctx.fillRect(0,0,W,H);
 
-  const R=Math.min(16,W*0.05);
-  const topM=R+60,botM=28;
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#c9d8f0');sky.addColorStop(1,'#eef2f8');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  drawBuilding(ctx,W,H);
+  ctx.fillStyle='#b5c4a0';ctx.fillRect(0,H-14,W,14);
+  ctx.fillStyle='#8a9e74';ctx.fillRect(0,H-14,W,3);
+
+  const R=ballR();
+  const topM=R+50,botM=28;
   const maxDrop=Math.max(yPos(MAX_T)*1.05,10);
-  const axX=W*0.46;
+  const axX=W*0.42;
   const toSY=y=>topM+(H-topM-botM)*(y/maxDrop);
 
-  ctx.strokeStyle='#ddd';ctx.lineWidth=1;
+  // eje vertical (solo línea y ticks, SIN texto)
+  ctx.strokeStyle='rgba(100,120,160,0.3)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(axX,topM-R-4);ctx.lineTo(axX,H-botM);ctx.stroke();
-  ctx.fillStyle='#bbb';ctx.font='10px Arial';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
-    const yv=(maxDrop/4)*i,sy=toSY(yv);
-    ctx.fillText(yv.toFixed(0)+'m',axX-5,sy+4);
-    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);ctx.strokeStyle='#ddd';ctx.stroke();
+    const sy=toSY(maxDrop/4*i);
+    ctx.beginPath();ctx.moveTo(axX-3,sy);ctx.lineTo(axX+3,sy);
+    ctx.strokeStyle='rgba(100,120,160,0.22)';ctx.stroke();
+  }
+
+  // overlays numéricos eje y (texto plano, no KaTeX)
+  for(let i=0;i<=4;i++){
+    const yv=maxDrop/4*i,sy=toSY(yv);
+    pov('wrap_anim','ytick_a_'+i,yv.toFixed(0)+' m',{
+      left:(axX-5)+'px',top:(sy-6)+'px',
+      transform:'translateX(-100%)',
+      fontSize:'10px',color:'#9aaccc'
+    });
   }
 
   const cy=toSY(yPos(tSim));
-  ctx.beginPath();ctx.arc(axX,cy,R,0,2*Math.PI);
-  ctx.fillStyle='#1a6fc4';ctx.fill();ctx.strokeStyle='#0d4a9e';ctx.lineWidth=1.5;ctx.stroke();
+  ballHistory.push({x:axX,y:cy});
+  if(ballHistory.length>18)ballHistory.shift();
+  drawTrail(ctx);
+  drawBall(ctx,axX,cy,R,tSim*1.8);
 
+  // ── flechas (sin texto) ──────────────────────────
   const vNow=vAnal(tSim);
   const sc=Math.min((H-topM-botM)*0.013,4.5);
-  const Fg_len=m*G*sc,Fr_len=k*vNow*sc,Fn_len=Math.abs(m*G-k*vNow)*sc;
-  const Fn_dir=(m*G-k*vNow)>=0?1:-1;
+  const Fg_len=m*G*sc,Fr_len=k*vNow*sc;
+  const Fn_mag=m*G-k*vNow,Fn_len=Math.abs(Fn_mag)*sc;
+  const Fn_dir=Fn_mag>=0?1:-1;
 
-  function vec(x,y,len,dir,color,lbl1,lbl2){
-    const drawLen=Math.max(len,4),dy=drawLen*dir;
+  function arrow(x,y,len,dir,color){
+    const dl=Math.max(len,4),dy=dl*dir;
     ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();
     ctx.beginPath();ctx.moveTo(x,y+dy);ctx.lineTo(x-5,y+dy-dir*9);ctx.lineTo(x+5,y+dy-dir*9);ctx.closePath();ctx.fill();
-    const lx=x>axX?x+8:x-8;
-    ctx.textAlign=x>axX?'left':'right';
-    ctx.font='bold 11px Arial';ctx.fillText(lbl1,lx,y+dy*0.4);
-    ctx.font='9px Arial';ctx.fillText(lbl2,lx,y+dy*0.4+13);
   }
 
-  vec(axX-R-14,cy,Fg_len,1,'#cc2200','Fg','Peso');
-  vec(axX+R+14,cy,Math.max(Fr_len,4),-1,'#1D9E75','Fr','Resist. aire');
-  if(Fn_len>1) vec(axX,cy+R+6,Fn_len,Fn_dir,'#e07000','Fn','F. neta');
-  else{ctx.beginPath();ctx.arc(axX,cy+R+6,4,0,2*Math.PI);ctx.fillStyle='#e07000';ctx.fill();ctx.font='9px Arial';ctx.textAlign='center';ctx.fillStyle='#e07000';ctx.fillText('Fn=0: v=v∞',axX,cy+R+20);}
+  if(!contrastMode){
+    arrow(axX-R-14,cy,Fg_len,1,'#cc2200');
+    arrow(axX+R+14,cy,Math.max(Fr_len,4),-1,'#1D9E75');
+    if(Fn_len>1) arrow(axX,cy+R+6,Fn_len,Fn_dir,'#e07000');
+    else{ctx.beginPath();ctx.arc(axX,cy+R+8,5,0,2*Math.PI);ctx.fillStyle='#e07000';ctx.fill();}
+  } else {
+    arrow(axX-R-14,cy,Fg_len,1,'#cc2200');
+  }
 
-  ctx.fillStyle='#aaa';ctx.font='10px Arial';ctx.textAlign='center';
-  ctx.fillText('t = '+tSim.toFixed(1)+' s',axX,H-8);
+  // ── overlays KaTeX: etiquetas de vectores ────────
+  const Fg_mid=cy+Fg_len*0.4;
+  const Fr_mid=cy-Math.max(Fr_len,4)*0.4;
+
+  // ── etiquetas de vectores: solo si labelsVisible ───────────
+  if(!contrastMode){
+    if(labelsVisible){
+      kov('wrap_anim','lbl_Fg','F_g',{
+        left:(axX-R-14-10)+'px',top:(Fg_mid-8)+'px',
+        transform:'translateX(-100%)',color:'#cc2200',fontWeight:'700'
+      });
+      kov('wrap_anim','lbl_Fr','F_r',{
+        left:(axX+R+14+10)+'px',top:(Fr_mid-8)+'px',
+        color:'#1D9E75',fontWeight:'700'
+      });
+      if(Fn_len>1){
+        const Fn_mid=cy+R+6+Fn_len*Fn_dir*0.4;
+        kov('wrap_anim','lbl_Fn','F_n',{
+          left:(axX+8)+'px',top:(Fn_mid-8)+'px',
+          color:'#e07000',fontWeight:'700'
+        });
+        hov('lbl_Fn0');
+      } else {
+        hov('lbl_Fn');
+        kov('wrap_anim','lbl_Fn0','F_n\\approx 0',{
+          left:(axX)+'px',top:(cy+R+22)+'px',
+          transform:'translateX(-50%)',color:'#e07000',fontSize:'10px'
+        });
+      }
+    } else {
+      hov('lbl_Fg');hov('lbl_Fr');hov('lbl_Fn');hov('lbl_Fn0');
+    }
+    hov('lbl_sinaire');
+  } else {
+    if(labelsVisible){
+      kov('wrap_anim','lbl_Fg','F_g',{
+        left:(axX-R-14-10)+'px',top:(Fg_mid-8)+'px',
+        transform:'translateX(-100%)',color:'#cc2200',fontWeight:'700'
+      });
+    } else {
+      hov('lbl_Fg');
+    }
+    hov('lbl_Fr');hov('lbl_Fn');hov('lbl_Fn0');
+    kov('wrap_anim','lbl_sinaire','\\text{Sin resistencia del aire}',{
+      left:(axX)+'px',top:(cy-R-22)+'px',
+      transform:'translateX(-50%)',color:'#7c3aed',fontSize:'10px',fontWeight:'700'
+    });
+  }
+
+  // overlay tiempo
+  pov('wrap_anim','lbl_t','t = '+tSim.toFixed(1)+' s',{
+    left:(axX)+'px',bottom:'10px',
+    transform:'translateX(-50%)',
+    fontSize:'11px',color:'rgba(100,110,130,0.85)'
+  });
 }
 
+// ══════════════════════════════════════════════
+// DIBUJO GRÁFICA v(t)
+// ══════════════════════════════════════════════
 function drawGraf(){
   const cv=document.getElementById('cv_graf');
   const dpr=window.devicePixelRatio||1;
   const W=cv.offsetWidth,H=cv.offsetHeight;
+  if(!W||!H)return;
   cv.width=W*dpr;cv.height=H*dpr;
   const ctx=cv.getContext('2d');
   ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
 
-  const pad={l:46,r:44,t:18,b:36};
+  const pad={l:46,r:52,t:22,b:38};
   const gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
   const vi=vinf();
-  const maxV=Math.max(vi*1.18,v0*1.18,10);
+  const maxV=contrastMode
+    ? Math.max(vFree(MAX_T)*1.08,vi*1.18,v0*1.1,10)
+    : Math.max(vi*1.18,v0*1.18,10);
+  const vStep=maxV/5;
   const tx=t=>pad.l+t/MAX_T*gW;
-  const ty=v=>pad.t+gH*(1-v/maxV);
+  const ty=v=>pad.t+gH*(1-Math.min(v,maxV)/maxV);
 
+  // rejilla
   ctx.strokeStyle='#f0f0f0';ctx.lineWidth=1;
-  for(let v=0;v<=maxV;v+=maxV/5){ctx.beginPath();ctx.moveTo(pad.l,ty(v));ctx.lineTo(pad.l+gW,ty(v));ctx.stroke();}
+  for(let v=0;v<=maxV+0.001;v+=vStep){ctx.beginPath();ctx.moveTo(pad.l,ty(v));ctx.lineTo(pad.l+gW,ty(v));ctx.stroke();}
   for(let t=0;t<=MAX_T;t+=5){ctx.beginPath();ctx.moveTo(tx(t),pad.t);ctx.lineTo(tx(t),pad.t+gH);ctx.stroke();}
-
   ctx.strokeStyle='#bbb';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gH);ctx.lineTo(pad.l+gW,pad.t+gH);ctx.stroke();
 
-  ctx.fillStyle='#999';ctx.font='10px Arial';ctx.textAlign='right';
-  for(let v=0;v<=maxV;v+=maxV/5)ctx.fillText(v.toFixed(0),pad.l-5,ty(v)+4);
-  ctx.textAlign='center';
-  for(let t=0;t<=MAX_T;t+=5)ctx.fillText(t,tx(t),pad.t+gH+14);
-  ctx.fillText('t (s)',pad.l+gW/2,H-3);
-  ctx.save();ctx.translate(12,pad.t+gH/2);ctx.rotate(-Math.PI/2);ctx.fillText('v (m/s)',0,0);ctx.restore();
+  // línea v∞
+  if(!contrastMode){
+    ctx.strokeStyle='rgba(224,112,0,0.4)';ctx.lineWidth=1.5;ctx.setLineDash([6,5]);
+    ctx.beginPath();ctx.moveTo(pad.l,ty(vi));ctx.lineTo(pad.l+gW,ty(vi));ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
-  // curva de comportamiento observado (sin modelo explícito)
+  // curva libre
+  if(contrastMode){
+    ctx.strokeStyle='#7c3aed';ctx.lineWidth=2.5;ctx.setLineDash([7,5]);
+    ctx.beginPath();let first=true;
+    for(const p of trailFree){
+      if(p.t>tSim+DT)break;
+      const vy=Math.min(p.v,maxV);
+      if(first){ctx.moveTo(tx(p.t),ty(vy));first=false;}else ctx.lineTo(tx(p.t),ty(vy));
+    }
+    ctx.stroke();ctx.setLineDash([]);
+  }
+
+  // curva principal
   ctx.strokeStyle='#1a6fc4';ctx.lineWidth=3;
   ctx.beginPath();let first=true;
-  for(const p of trailAnal){if(p.t>tSim+DT)break;if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}else ctx.lineTo(tx(p.t),ty(p.v));}
+  for(const p of trailAnal){
+    if(p.t>tSim+DT)break;
+    if(first){ctx.moveTo(tx(p.t),ty(p.v));first=false;}else ctx.lineTo(tx(p.t),ty(p.v));
+  }
   ctx.stroke();
 
+  // punto actual
   const vNow=vAnal(tSim);
   ctx.beginPath();ctx.arc(tx(tSim),ty(vNow),5,0,2*Math.PI);ctx.fillStyle='#111';ctx.fill();
-  ctx.fillStyle='#333';ctx.font='bold 10px Arial';ctx.textAlign='left';
-  ctx.fillText('v='+vNow.toFixed(2)+' m/s',tx(tSim)+7,ty(vNow)-6);
+
+  // ── overlays KaTeX ───────────────────────────────
+
+  // ticks eje Y (plano)
+  for(let i=0;i<=5;i++){
+    const v=vStep*i;
+    if(v>maxV+0.001)break;
+    pov('wrap_graf','ytick_g_'+i,v.toFixed(0),{
+      right:(W-pad.l+5)+'px',top:(ty(v)-6)+'px',
+      fontSize:'10px',color:'#999',textAlign:'right'
+    });
+  }
+
+  // ticks eje X (plano)
+  for(let t=0;t<=MAX_T;t+=5){
+    pov('wrap_graf','xtick_'+t,String(t),{
+      left:(tx(t)-10)+'px',top:(pad.t+gH+5)+'px',
+      fontSize:'10px',color:'#999',textAlign:'center',width:'20px'
+    });
+  }
+
+  // etiqueta eje x: t\;(\text{s})
+  kov('wrap_graf','xlabel','t\\;(\\mathrm{s})',{
+    left:(pad.l+gW/2-10)+'px',top:(H-15)+'px',
+    fontSize:'11px',color:'#888'
+  });
+
+  // etiqueta eje y: v(t)\;(\mathrm{m/s}) — rotada
+  kov('wrap_graf','ylabel','v(t)\\;\\left(\\tfrac{\\mathrm{m}}{\\mathrm{s}}\\right)',{
+    left:'2px',top:(pad.t+gH/2)+'px',
+    transform:'translateY(-50%) rotate(-90deg)',
+    fontSize:'10px',color:'#888',transformOrigin:'left center'
+  });
+
+  // etiqueta v∞
+  if(!contrastMode){
+    kov('wrap_graf','lbl_vinf','v_\\infty',{
+      left:(pad.l+gW+4)+'px',top:(ty(vi)-8)+'px',
+      color:'#e07000',fontWeight:'700'
+    });
+  } else {
+    hov('lbl_vinf');
+  }
+
+  // valor actual v(t_actual) = X m/s
+  kov('wrap_graf','lbl_vval',
+    'v('+tSim.toFixed(1)+')='+vNow.toFixed(2)+'\\,\\tfrac{\\mathrm{m}}{\\mathrm{s}}',{
+    left:(tx(tSim)+8)+'px',top:(ty(vNow)-16)+'px',
+    fontSize:'10px',color:'#111',fontWeight:'700'
+  });
+
+  // leyenda modo contraste
+  if(contrastMode){
+    kov('wrap_graf','leg_con','v(t)\\text{ con aire}',{
+      left:(pad.l+6)+'px',top:(pad.t+4)+'px',
+      fontSize:'10px',color:'#1a6fc4',fontWeight:'700'
+    });
+    kov('wrap_graf','leg_sin','v(t)\\text{ sin aire}',{
+      left:(pad.l+6)+'px',top:(pad.t+18)+'px',
+      fontSize:'10px',color:'#7c3aed',fontWeight:'700'
+    });
+  } else {
+    hov('leg_con');hov('leg_sin');
+  }
+}
+
+// ══════════════════════════════════════════════
+// CONTROL
+// ══════════════════════════════════════════════
+let labelsVisible=false;
+const LEG_HIDDEN={fg:'Fuerza roja ↓',fr:'Fuerza verde ↑',fn:'Fuerza naranja'};
+const LEG_SHOWN ={fg:'Fg = mg  (peso)',fr:'Fr = kv  (resist. aire)',fn:'Fn  (fuerza neta)'};
+
+function toggleLabels(){
+  labelsVisible=!labelsVisible;
+  const btn=document.getElementById('btn_labels');
+  if(labelsVisible){
+    btn.textContent='✓ Nombres de fuerzas visibles';
+    btn.style.background='#e07000';btn.style.color='#fff';btn.style.borderColor='#b45000';
+    document.getElementById('leg_fg').textContent=LEG_SHOWN.fg;
+    document.getElementById('leg_fr').textContent=LEG_SHOWN.fr;
+    document.getElementById('leg_fn').textContent=LEG_SHOWN.fn;
+  } else {
+    btn.textContent='🏷️ Mostrar nombres de las fuerzas';
+    btn.style.background='#fff8f0';btn.style.color='#b45000';btn.style.borderColor='#e07000';
+    document.getElementById('leg_fg').textContent=LEG_HIDDEN.fg;
+    document.getElementById('leg_fr').textContent=LEG_HIDDEN.fr;
+    document.getElementById('leg_fn').textContent=LEG_HIDDEN.fn;
+  }
+  render();
+}
+
+function toggleContrast(){
+  contrastMode=!contrastMode;
+  const btn=document.getElementById('btn_contrast');
+  const badge=document.getElementById('mode_badge');
+  if(contrastMode){
+    btn.textContent='✓ Modo «Sin resistencia» activo — comparar';
+    btn.classList.add('sin-aire');
+    badge.textContent='Sin resistencia del aire';
+    badge.className='mode-badge sin-aire';
+  } else {
+    btn.textContent='🌬️ Activar modo «Sin resistencia del aire»';
+    btn.classList.remove('sin-aire');
+    badge.textContent='Con resistencia del aire';
+    badge.className='mode-badge con-aire';
+  }
+  render();
 }
 
 function render(){updateStats();drawAnim();drawGraf();}
+
 function reset(){
-  tSim=0;playing=false;lastTs=null;
+  tSim=0;playing=false;lastTs=null;vinflashed=false;ballHistory=[];
   document.getElementById('btn_play').textContent='▶ Iniciar';
   document.getElementById('btn_play').classList.remove('active');
   buildTrails();render();
 }
+
 function loop(ts){
   if(!playing){lastTs=null;return;}
   if(lastTs===null)lastTs=ts;
   tSim=Math.min(tSim+Math.min((ts-lastTs)/1000,0.1),MAX_T);
   lastTs=ts;render();
-  if(tSim>=MAX_T){playing=false;document.getElementById('btn_play').textContent='▶ Iniciar';document.getElementById('btn_play').classList.remove('active');return;}
+  if(tSim>=MAX_T){
+    playing=false;
+    document.getElementById('btn_play').textContent='▶ Iniciar';
+    document.getElementById('btn_play').classList.remove('active');
+    return;
+  }
   requestAnimationFrame(loop);
 }
+
 document.getElementById('btn_play').addEventListener('click',()=>{
   if(tSim>=MAX_T)tSim=0;playing=!playing;
   const btn=document.getElementById('btn_play');
@@ -296,32 +662,38 @@ document.getElementById('btn_play').addEventListener('click',()=>{
   else{btn.textContent='▶ Iniciar';btn.classList.remove('active');}
 });
 document.getElementById('btn_reset').addEventListener('click',reset);
+
 function bindSlider(slId,niId,dec,setter){
-  const sl=document.getElementById(slId);
-  const ni=document.getElementById(niId);
-  if(!sl||!ni) return;
-  sl.addEventListener('input',()=>{
-    const v=parseFloat(sl.value);
-    setter(v);ni.value=v.toFixed(dec);reset();
-  });
+  const sl=document.getElementById(slId),ni=document.getElementById(niId);
+  if(!sl||!ni)return;
+  sl.addEventListener('input',()=>{const v=parseFloat(sl.value);setter(v);ni.value=v.toFixed(dec);reset();});
   ni.addEventListener('change',()=>{
     let v=parseFloat(ni.value);
     const mn=parseFloat(sl.min),mx=parseFloat(sl.max);
-    if(isNaN(v)) v=parseFloat(sl.value);
+    if(isNaN(v))v=parseFloat(sl.value);
     v=Math.min(mx,Math.max(mn,v));
     const st=parseFloat(sl.step)||1;
-    v=Math.round(v/st)*st;
-    v=Math.round(v*1e6)/1e6;
-    sl.value=v;ni.value=v.toFixed(dec);
-    setter(v);reset();
+    v=Math.round(v/st)*st;v=Math.round(v*1e6)/1e6;
+    sl.value=v;ni.value=v.toFixed(dec);setter(v);reset();
   });
   ni.addEventListener('focus',()=>ni.select());
 }
 bindSlider('sl_m','ni_m',1,v=>{m=v;});
 bindSlider('sl_k','ni_k',1,v=>{k=v;});
 bindSlider('sl_v0','ni_v0',0,v=>{v0=v;});
-window.addEventListener('resize',render);
-reset();
+
+window.addEventListener('resize',()=>{
+  Object.values(OVC).forEach(c=>{c.el.style.display='none';});
+  render();
+});
+
+// Esperar a KaTeX antes del primer render
+function waitKatex(cb,tries=0){
+  if(window.katex){cb();}
+  else if(tries<40){setTimeout(()=>waitKatex(cb,tries+1),80);}
+  else{cb();}
+}
+waitKatex(()=>{buildTrails();render();});
 </script>
 </body>
 </html>
